@@ -82,16 +82,16 @@ class RND(torch.nn.Module):
         predicted_vector = self.predictor(states)
         target_vector = self.target(states)
 
-        internal_reward = torch.nn.functional.mse_loss(predicted_vector, target_vector, reduction='mean')
-        internal_reward = internal_reward.unsqueeze(0) # dim: 1,
-        internal_reward = self.reward_normalizer(internal_reward)
+        intrinsic_reward = torch.nn.functional.mse_loss(predicted_vector, target_vector, reduction='mean')
+        intrinsic_reward = intrinsic_reward.unsqueeze(0) # dim: 1,
+        intrinsic_reward = self.reward_normalizer(intrinsic_reward)
 
-        loss = internal_reward.mean(dim=0)
+        loss = intrinsic_reward.mean(dim=0)
 
         if log:
             self.logger.debug('int_rew: %f, rnd_loss: %f, mean: %f, std: %f',
                 loss.item(),
-                internal_reward.mean().item(),
+                intrinsic_reward.mean().item(),
                 self.reward_normalizer.mean.item(),
                 self.reward_normalizer.std.item(),
             )
@@ -101,4 +101,4 @@ class RND(torch.nn.Module):
             loss.backward()
             self.optimizer.step()
 
-        return internal_reward.detach()
+        return intrinsic_reward.detach()
