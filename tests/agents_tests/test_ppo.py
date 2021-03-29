@@ -29,34 +29,7 @@ from pfrl.policies import (
 from pfrl.testing import torch_assert_allclose
 from pfrl.utils.batch_states import batch_states
 
-
-def make_random_episodes(n_episodes=10, obs_size=2, n_actions=3):
-    episodes = []
-    for _ in range(n_episodes):
-        episode_length = np.random.randint(1, 100)
-        episode = []
-        last_state = np.random.uniform(-1, 1, size=obs_size)
-        for t in range(episode_length):
-            state = np.random.uniform(-1, 1, size=obs_size)
-            episode.append(
-                {
-                    "state": last_state,
-                    "action": np.random.randint(n_actions),
-                    "reward": np.random.uniform(-1, 1),
-                    "nonterminal": (
-                        np.random.randint(2) if t == episode_length - 1 else 1
-                    ),
-                    "next_state": state,
-                    "recurrent_state": None,
-                    "next_recurrent_state": None,
-                }
-            )
-            last_state = state
-        episodes.append(episode)
-
-    assert len(episodes) == n_episodes
-    return episodes
-
+make_random_episodes = ABC.make_random_episodes
 
 class TestYieldSubsetOfSequencesWithFixedNumberOfItems(unittest.TestCase):
     def test_manual(self):
