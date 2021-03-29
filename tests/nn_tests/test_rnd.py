@@ -12,7 +12,7 @@ make_random_episodes = ABC.make_random_episodes
 @pytest.mark.parametrize("log", [True, False])
 class TestRND:
     @pytest.fixture(autouse=True)
-    def setUp(self, gpu):
+    def setUp(self):
         self.env = ABC(deterministic=True)
         self.obs_shape = self.env.observation_space.shape
 
@@ -24,9 +24,9 @@ class TestRND:
     
     def _test_rnd(self, rnd_module, update_params, log):
         rnd_module.initialize_normalizer(self.env)
-        episode = make_random_episodes(1, self.obs_shape[0], self.env.action_space.n)[0]
-        states = torch.cat([transition['state'] for transition in episode])
-        states = states.to(device=self.rnd_module.device)
+        ep = make_random_episodes(1, self.obs_shape[0], self.env.action_space.n)[0]
+        states = torch.cat([torch.from_numpy(t['state']).unsqueeze(0).to(dtype=torch.float) for t in ep])
+        states = states.to(device=rnd_module.device)
         rnd_module(states, update_params=update_params, log=log)
 
     def test_rnd(self, init_steps, update_params, log):
