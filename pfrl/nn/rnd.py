@@ -23,7 +23,6 @@ class RND(torch.nn.Module):
     def __init__(self,
             model,
             obs_shape,
-            reward_shape,
             init_steps,
             gpu=None,
             optimizer=None,
@@ -32,7 +31,6 @@ class RND(torch.nn.Module):
         super(RND, self).__init__()
         self.init_steps = init_steps
         self.obs_shape = obs_shape
-        self.reward_shape = reward_shape
 
         self.target = model
         self.predictor = deepcopy(self.target)
@@ -45,7 +43,7 @@ class RND(torch.nn.Module):
         self.logger = logger
 
         self.obs_normalizer = EmpiricalNormalization(obs_shape, clip_threshold=5.0)
-        self.reward_normalizer = EmpiricalNormalization(reward_shape, clip_threshold=np.inf)
+        self.reward_normalizer = EmpiricalNormalization(1, clip_threshold=np.inf)
 
         if gpu is not None and gpu >= 0:
             assert torch.cuda.is_available()
@@ -57,6 +55,7 @@ class RND(torch.nn.Module):
         self.predictor.to(self.device)
         self.obs_normalizer.to(self.device)
         self.reward_normalizer.to(self.device)
+
         if optimizer is None:
             self.optimizer = torch.optim.Adam(self.predictor.parameters())
         else:
@@ -83,8 +82,8 @@ class RND(torch.nn.Module):
         predicted_vector = self.predictor(states)
         target_vector = self.target(states)
 
-        internal_reward = torch.nn.functional.mse_loss(predicted_vector, target_vector, reduction='none')
-        internal_reward = internal_reward.mean(dim=self.reward_shape, keepdim=True)
+        internal_reward = torch.nn.functional.mse_loss(predicted_vector, target_vector, reduction='mean')
+        internal_reward = internal_reward.unsqueeze(0) # dim: 1,
         internal_reward = self.reward_normalizer(internal_reward)
 
         loss = internal_reward.mean(dim=0)

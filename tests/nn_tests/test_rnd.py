@@ -15,15 +15,6 @@ class TestRND:
     def setUp(self, gpu):
         self.env = ABC(deterministic=True)
         self.obs_shape = self.env.observation_space.shape
-        self.env.reset()
-
-        _, rew, _, _ = self.env.step(self.env.action_space.sample())
-        if isinstance(rew, (int, float)):
-            self.reward_shape = (1,)
-        elif isinstance(rew, (torch.Tensor, np.ndarray)):
-            self.reward_shape = rew.shape
-        else:
-            raise ValueError("Environment has unrecognized reward type: {}".format(type(rew)))
 
         self.model = torch.nn.Sequential(
                 torch.nn.Linear(self.obs_shape[0], 16), torch.nn.ReLU(),
@@ -39,10 +30,10 @@ class TestRND:
         rnd_module(states, update_params=update_params, log=log)
 
     def test_rnd(self, init_steps, update_params, log):
-        rnd_module = RND(self.model, self.obs_shape, self.reward_shape, init_steps, gpu=None)
+        rnd_module = RND(self.model, self.obs_shape, init_steps, gpu=None)
         self._test_rnd(rnd_module, update_params, log)
 
     @pytest.mark.gpu
     def test_rnd_gpu(self, init_steps, update_params, log):
-        rnd_module = RND(self.model, self.obs_shape, self.reward_shape, init_steps, gpu=0)
+        rnd_module = RND(self.model, self.obs_shape, init_steps, gpu=0)
         self._test_rnd(rnd_module, update_params, log)
