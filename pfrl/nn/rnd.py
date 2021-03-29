@@ -65,13 +65,13 @@ class RND(torch.nn.Module):
         env.reset()
         if isinstance(env, VectorEnv):
             for _ in range(self.init_steps):
-                next_states, _, _, _ = env.step(
-                    [env.action_space.sample() for _ in range(env.num_envs)])
-                for i in range(env.num_envs):
-                    self.obs_normalizer(next_states[i])
+                next_states, _, _, _ = env.step([env.action_space.sample() for _ in range(env.num_envs)])
+                next_states = torch.cat(map(torch.from_numpy, next_states)).to(self.device)
+                self.obs_normalizer(next_states)
         elif isinstance(env, (gym.Env, Env)):
             for _ in range(self.init_steps):
                 next_state, _, _, _ = env.step(env.action_space.sample())
+                next_state = torch.from_numpy(next_state).to(self.device)
                 self.obs_normalizer(next_state)
         else:
             raise ValueError("{} env type not recognized".format(type(env)))
