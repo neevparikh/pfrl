@@ -92,8 +92,8 @@ class RND(torch.nn.Module):
             self.logger.debug('int_rew: %f, rnd_loss: %f, mean: %f, std: %f',
                 loss.item(),
                 internal_reward.mean().item(),
-                self.reward_normalizer.mean(),
-                self.reward_normalizer.std(),
+                self.reward_normalizer.mean.item(),
+                self.reward_normalizer.std.item(),
             )
 
         if update_params:
