@@ -12,3 +12,4 @@ from pfrl.nn.noisy_linear import FactorizedNoisyLinear  # NOQA
 from pfrl.nn.recurrent import Recurrent  # NOQA
 from pfrl.nn.recurrent_branched import RecurrentBranched  # NOQA
 from pfrl.nn.recurrent_sequential import RecurrentSequential  # NOQA
+from pfrl.nn.rnd import RND # NOQA
