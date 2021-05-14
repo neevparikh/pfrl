@@ -312,7 +312,7 @@ class _TestPPO:
 
         # Test
         n_test_runs = 10
-        eval_returns = run_evaluation_episodes(
+        eval_returns, _ = run_evaluation_episodes(
             test_env,
             agent,
             n_steps=None,
@@ -359,7 +359,7 @@ class _TestPPO:
 
         # Test
         n_test_runs = 10
-        eval_returns = batch_run_evaluation_episodes(
+        eval_returns, _ = batch_run_evaluation_episodes(
             test_env,
             agent,
             n_steps=None,
