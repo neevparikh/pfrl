@@ -8,19 +8,20 @@ from pfrl.experiments.evaluator import Evaluator, save_agent
 
 
 def train_agent_batch(
-    agent,
-    env,
-    steps,
-    outdir,
-    checkpoint_freq=None,
-    log_interval=None,
-    max_episode_len=None,
-    step_offset=0,
-    evaluator=None,
-    successful_score=None,
-    step_hooks=(),
-    return_window_size=100,
-    logger=None,
+        agent,
+        env,
+        steps,
+        outdir,
+        check_valid_actions=False,
+        checkpoint_freq=None,
+        log_interval=None,
+        max_episode_len=None,
+        step_offset=0,
+        evaluator=None,
+        successful_score=None,
+        step_hooks=(),
+        return_window_size=100,
+        logger=None,
 ):
     """Train an agent in a batch environment.
 
@@ -63,8 +64,12 @@ def train_agent_batch(
     eval_stats_history = []  # List of evaluation episode stats dict
     try:
         while True:
+            valid_actions = None
+            if check_valid_actions:
+                action_spaces = env.get_action_spaces()
+                valid_actions = np.array([space.available_actions for space in action_spaces])
             # a_t
-            actions = agent.batch_act(obss)
+            actions = agent.batch_act(obss, valid_actions=valid_actions)
             # o_{t+1}, r_{t+1}
             obss, rs, dones, infos = env.step(actions)
             episode_r += rs
@@ -75,9 +80,7 @@ def train_agent_batch(
                 resets = np.zeros(num_envs, dtype=bool)
             else:
                 resets = episode_len == max_episode_len
-            resets = np.logical_or(
-                resets, [info.get("needs_reset", False) for info in infos]
-            )
+            resets = np.logical_or(resets, [info.get("needs_reset", False) for info in infos])
             # Agent observes the consequences
             agent.batch_observe(obss, rs, dones, resets)
 
@@ -103,33 +106,22 @@ def train_agent_batch(
                 for hook in step_hooks:
                     hook(env, agent, t)
 
-            if (
-                log_interval is not None
-                and t >= log_interval
-                and t % log_interval < num_envs
-            ):
-                logger.info(
-                    "outdir:{} step:{} episode:{} last_R: {} average_R:{}".format(  # NOQA
-                        outdir,
-                        t,
-                        np.sum(episode_idx),
-                        recent_returns[-1] if recent_returns else np.nan,
-                        np.mean(recent_returns) if recent_returns else np.nan,
-                    )
-                )
+            if (log_interval is not None and t >= log_interval and t % log_interval < num_envs):
+                logger.info("outdir:{} step:{} episode:{} last_R: {} average_R:{}".format(  # NOQA
+                    outdir,
+                    t,
+                    np.sum(episode_idx),
+                    recent_returns[-1] if recent_returns else np.nan,
+                    np.mean(recent_returns) if recent_returns else np.nan,
+                ))
                 logger.info("statistics: {}".format(agent.get_statistics()))
             if evaluator:
-                eval_score = evaluator.evaluate_if_necessary(
-                    t=t, episodes=np.sum(episode_idx)
-                )
+                eval_score = evaluator.evaluate_if_necessary(t=t, episodes=np.sum(episode_idx))
                 if eval_score is not None:
                     eval_stats = dict(agent.get_statistics())
                     eval_stats["eval_score"] = eval_score
                     eval_stats_history.append(eval_stats)
-                    if (
-                        successful_score is not None
-                        and evaluator.max_score >= successful_score
-                    ):
+                    if (successful_score is not None and evaluator.max_score >= successful_score):
                         break
 
             if t >= steps:
@@ -155,26 +147,27 @@ def train_agent_batch(
 
 
 def train_agent_batch_with_evaluation(
-    agent,
-    env,
-    steps,
-    eval_n_steps,
-    eval_n_episodes,
-    eval_interval,
-    outdir,
-    checkpoint_freq=None,
-    max_episode_len=None,
-    step_offset=0,
-    eval_max_episode_len=None,
-    return_window_size=100,
-    eval_env=None,
-    log_interval=None,
-    successful_score=None,
-    step_hooks=(),
-    evaluation_hooks=(),
-    save_best_so_far_agent=True,
-    use_tensorboard=False,
-    logger=None,
+        agent,
+        env,
+        steps,
+        eval_n_steps,
+        eval_n_episodes,
+        eval_interval,
+        outdir,
+        check_valid_actions=True,
+        checkpoint_freq=None,
+        max_episode_len=None,
+        step_offset=0,
+        eval_max_episode_len=None,
+        return_window_size=100,
+        eval_env=None,
+        log_interval=None,
+        successful_score=None,
+        step_hooks=(),
+        evaluation_hooks=(),
+        save_best_so_far_agent=True,
+        use_tensorboard=False,
+        logger=None,
 ):
     """Train an agent while regularly evaluating it.
 
@@ -218,8 +211,7 @@ def train_agent_batch_with_evaluation(
     for hook in evaluation_hooks:
         if not hook.support_train_agent_batch:
             raise ValueError(
-                "{} does not support train_agent_batch_with_evaluation().".format(hook)
-            )
+                "{} does not support train_agent_batch_with_evaluation().".format(hook))
 
     os.makedirs(outdir, exist_ok=True)
 
@@ -249,6 +241,7 @@ def train_agent_batch_with_evaluation(
         env,
         steps,
         outdir,
+        check_valid_actions=check_valid_actions,
         checkpoint_freq=checkpoint_freq,
         max_episode_len=max_episode_len,
         step_offset=step_offset,
