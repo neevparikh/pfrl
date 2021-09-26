@@ -67,7 +67,7 @@ def train_agent_batch(
             valid_actions = None
             if check_valid_actions:
                 action_spaces = env.get_action_spaces()
-                valid_actions = np.array([space.available_actions for space in action_spaces])
+                valid_actions = np.array([space.available_actions() for space in action_spaces])
             # a_t
             actions = agent.batch_act(obss, valid_actions=valid_actions)
             # o_{t+1}, r_{t+1}

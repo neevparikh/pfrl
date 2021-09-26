@@ -43,16 +43,13 @@ class MultiprocessVectorEnv(pfrl.env.VectorEnv):
         env_fns (list of callable): List of callables, each of which
             returns gym.Env that is run in its own subprocess.
     """
-
     def __init__(self, env_fns):
         if np.__version__ == "1.16.0":
-            warnings.warn(
-                """
+            warnings.warn("""
 NumPy 1.16.0 can cause severe memory leak in pfrl.envs.MultiprocessVectorEnv.
 We recommend using other versions of NumPy.
 See https://github.com/numpy/numpy/issues/12793 for details.
-"""
-            )  # NOQA
+""")  # NOQA
 
         nenvs = len(env_fns)
         self.remotes, self.work_remotes = zip(*[Pipe() for _ in range(nenvs)])
@@ -66,6 +63,11 @@ See https://github.com/numpy/numpy/issues/12793 for details.
         self.remotes[0].send(("get_spaces", None))
         self.action_space, self.observation_space = self.remotes[0].recv()
         self.closed = False
+
+    def get_action_spaces(self):
+        for remote in self.remotes:
+            remote.send(("get_spaces", None))
+        return [remote.recv()[0] for remote in self.remotes]
 
     def __del__(self):
         if not self.closed:
@@ -95,8 +97,9 @@ See https://github.com/numpy/numpy/issues/12793 for details.
                 remote.send(("reset", None))
 
         obs = [
-            remote.recv() if not m else o
-            for m, remote, o in zip(mask, self.remotes, self.last_obs)
+            remote.recv() if not m else o for m,
+            remote,
+            o in zip(mask, self.remotes, self.last_obs)
         ]
         self.last_obs = obs
         return obs
@@ -116,15 +119,10 @@ See https://github.com/numpy/numpy/issues/12793 for details.
                 seeds = [seeds] * self.num_envs
             elif isinstance(seeds, list):
                 if len(seeds) != self.num_envs:
-                    raise ValueError(
-                        "length of seeds must be same as num_envs {}".format(
-                            self.num_envs
-                        )
-                    )
+                    raise ValueError("length of seeds must be same as num_envs {}".format(
+                        self.num_envs))
             else:
-                raise TypeError(
-                    "Type of Seeds {} is not supported.".format(type(seeds))
-                )
+                raise TypeError("Type of Seeds {} is not supported.".format(type(seeds)))
         else:
             seeds = [None] * self.num_envs
 
