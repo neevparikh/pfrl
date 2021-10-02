@@ -31,11 +31,11 @@ class RNDModel(torch.nn.Module):
             nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, stride=1),
             nn.LeakyReLU(),
             Lambda(lambda x: x.view(x.size(0), -1)),
-            nn.Linear(feature_output, 512),
+            nn.Linear(feature_output, output_size),
             nn.ReLU(),
-            nn.Linear(512, 512),
+            nn.Linear(output_size, output_size),
             nn.ReLU(),
-            nn.Linear(512, 512))
+            nn.Linear(output_size, output_size))
 
         self.target = nn.Sequential(
             nn.Conv2d(in_channels=frame_stack, out_channels=32, kernel_size=8, stride=4),
@@ -45,7 +45,7 @@ class RNDModel(torch.nn.Module):
             nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, stride=1),
             nn.LeakyReLU(),
             Lambda(lambda x: x.view(x.size(0), -1)),
-            nn.Linear(feature_output, 512))
+            nn.Linear(feature_output, output_size))
 
         for p in self.modules():
             if isinstance(p, nn.Conv2d):
@@ -86,7 +86,7 @@ class RND(torch.nn.Module):
         self.obs_shape = obs_shape
 
         self.target = model.target
-        self.predictor = model.predictor  # deepcopy(self.target)
+        self.predictor = model.predictor
 
         self.target.apply(init_xavier_uniform)
         self.predictor.apply(init_xavier_uniform)
@@ -94,6 +94,15 @@ class RND(torch.nn.Module):
         self.target.eval()
 
         self.logger = logger
+
+        params = sum(p.numel() for p in self.target.parameters() if p.requires_grad)
+        self.logger.info("RND target (%s)\n - number of trainable parameters: %s",
+                         id(self.target),
+                         params)
+        params = sum(p.numel() for p in self.predictor.parameters() if p.requires_grad)
+        self.logger.info("RND predictor (%s)\n - number of trainable parameters: %s",
+                         id(self.predictor),
+                         params)
 
         self.obs_normalizer = EmpiricalNormalization(obs_shape, clip_threshold=5.0)
         self.reward_normalizer = EmpiricalNormalization(1, clip_threshold=np.inf)
@@ -116,22 +125,30 @@ class RND(torch.nn.Module):
 
     def initialize_normalizer(self, env):
         env.reset()
-        if isinstance(env, VectorEnv):
-            for _ in range(self.init_steps):
-                next_states, _, _, _ = env.step([env.action_space.sample() for _ in range(env.num_envs)])
-                next_states = torch.cat(map(torch.from_numpy, next_states)).to(self.device)
-                self.obs_normalizer(next_states)
-        elif isinstance(env, (gym.Env, Env)):
-            for _ in range(self.init_steps):
-                next_state, _, _, _ = env.step(env.action_space.sample())
-                next_state = torch.from_numpy(next_state).to(self.device)
-                self.obs_normalizer(next_state)
-        else:
-            raise ValueError("{} env type not recognized".format(type(env)))
+        with torch.no_grad():
+            if isinstance(env, VectorEnv):
+                for _ in range(self.init_steps):
+                    next_states, _, _, _ = env.step([env.action_space.sample() for _ in range(env.num_envs)])
+                    next_states = torch.cat(
+                        map(lambda a: torch.from_numpy(np.array(a)),
+                            next_states)).to(self.device, dtype=torch.float32)
+                    self.obs_normalizer(next_states)
+            elif isinstance(env, (gym.Env, Env)):
+                for _ in range(self.init_steps):
+                    next_state, _, _, _ = env.step(env.action_space.sample())
+                    next_state = torch.from_numpy(np.array(next_state)).to(self.device,
+                                                                           dtype=torch.float32)
+                    self.obs_normalizer(next_state)
+            else:
+                raise ValueError("{} env type not recognized".format(type(env)))
 
     def forward(self, states, update_params=False, log=True):
-        states = self.obs_normalizer(states)
-
+        states = torch.from_numpy(np.array(states)).to(device=self.device, dtype=torch.float32)
+        # states = states.detach()
+        with torch.no_grad():
+            states = self.obs_normalizer(states)
+        if len(states.shape) == 3:
+            states = states.unsqueeze(0)
         predicted_vector = self.predictor(states)
         target_vector = self.target(states)
 
@@ -139,22 +156,23 @@ class RND(torch.nn.Module):
                                                         target_vector,
                                                         reduction='mean')
         intrinsic_reward = intrinsic_reward.unsqueeze(0)  # dim: 1,
-        intrinsic_reward = self.reward_normalizer(intrinsic_reward)
-
         loss = intrinsic_reward.mean(dim=0)
 
         if log:
             self.logger.debug(
-                'int_rew: %f, rnd_loss: %f, mean: %f, std: %f',
-                loss.item(),
-                intrinsic_reward.mean().item(),
-                self.reward_normalizer.mean.item(),
-                self.reward_normalizer.std.item(),
+                'int_rew: %s, rnd_loss: %s, mean: %s, std: %s',
+                round(intrinsic_reward.mean().item(), 4),
+                round(loss.item(), 4),
+                round(self.reward_normalizer.mean.item(), 4),
+                round(self.reward_normalizer.std.item(), 4),
             )
 
         if update_params:
             self.optimizer.zero_grad()
-            loss.backward()
+            loss.backward(inputs=list(self.predictor.parameters()))
             self.optimizer.step()
 
-        return intrinsic_reward.detach()
+        with torch.no_grad():
+            intrinsic_reward = self.reward_normalizer(intrinsic_reward).detach()
+
+        return intrinsic_reward
