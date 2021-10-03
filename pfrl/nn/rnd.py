@@ -173,6 +173,6 @@ class RND(torch.nn.Module):
             self.optimizer.step()
 
         with torch.no_grad():
-            intrinsic_reward = self.reward_normalizer(intrinsic_reward).detach()
+            intrinsic_reward = self.reward_normalizer(intrinsic_reward, mean=False).detach()
 
         return intrinsic_reward
