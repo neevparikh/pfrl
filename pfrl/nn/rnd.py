@@ -10,6 +10,7 @@ import gym
 from pfrl.initializers import init_xavier_uniform
 from pfrl.nn import EmpiricalNormalization, Lambda
 from pfrl.env import VectorEnv, Env
+from pfrl.wrappers.atari_wrappers import LazyFrames
 
 
 class RNDModel(torch.nn.Module):
@@ -129,26 +130,29 @@ class RND(torch.nn.Module):
             if isinstance(env, VectorEnv):
                 for _ in range(self.init_steps):
                     next_states, _, _, _ = env.step([env.action_space.sample() for _ in range(env.num_envs)])
-                    next_states = torch.cat(
-                        map(lambda a: torch.from_numpy(np.array(a)),
-                            next_states)).to(self.device, dtype=torch.float32)
+                    next_states = torch.stack(map(lambda a: torch.from_numpy(np.array(a)),
+                                                  next_states),
+                                              dim=0).to(self.device, dtype=torch.float32)
                     self.obs_normalizer(next_states)
             elif isinstance(env, (gym.Env, Env)):
                 for _ in range(self.init_steps):
                     next_state, _, _, _ = env.step(env.action_space.sample())
                     next_state = torch.from_numpy(np.array(next_state)).to(self.device,
                                                                            dtype=torch.float32)
+                    if len(next_state.shape) == 3:
+                        next_state = next_state.unsqueeze(0)
+
                     self.obs_normalizer(next_state)
             else:
                 raise ValueError("{} env type not recognized".format(type(env)))
 
     def forward(self, states, update_params=False, log=True):
-        states = torch.from_numpy(np.array(states)).to(device=self.device, dtype=torch.float32)
-        # states = states.detach()
-        with torch.no_grad():
-            states = self.obs_normalizer(states)
+        if isinstance(states, LazyFrames):
+            states = torch.from_numpy(np.array(states)).to(device=self.device, dtype=torch.float32)
         if len(states.shape) == 3:
             states = states.unsqueeze(0)
+        with torch.no_grad():
+            states = self.obs_normalizer(states)
         predicted_vector = self.predictor(states)
         target_vector = self.target(states)
 
