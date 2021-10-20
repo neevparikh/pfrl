@@ -174,7 +174,7 @@ class RND(torch.nn.Module):
             )
 
         if update_params:
-            self.optimizer.zero_grad(set_to_none=True)
+            self.optimizer.zero_grad()
             loss.backward(inputs=list(self.predictor.parameters()))
             self.optimizer.step()
 
