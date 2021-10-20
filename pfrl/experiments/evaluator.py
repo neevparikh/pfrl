@@ -1,3 +1,4 @@
+from collections import defaultdict
 import logging
 import multiprocessing as mp
 import os
@@ -42,9 +43,7 @@ def _run_episodes(
         reset = done or episode_len == max_episode_len or info.get("needs_reset", False)
         agent.observe(obs, r, done, reset)
         if reset:
-            logger.info(
-                "evaluation episode %s length:%s R:%s", len(scores), episode_len, test_r
-            )
+            logger.info("evaluation episode %s length:%s R:%s", len(scores), episode_len, test_r)
             # As mixing float and numpy float causes errors in statistics
             # functions, here every score is cast to float.
             scores.append(float(test_r))
@@ -57,9 +56,7 @@ def _run_episodes(
     if len(scores) == 0:
         scores.append(float(test_r))
         lengths.append(float(episode_len))
-        logger.info(
-            "evaluation episode %s length:%s R:%s", len(scores), episode_len, test_r
-        )
+        logger.info("evaluation episode %s length:%s R:%s", len(scores), episode_len, test_r)
     return scores, lengths
 
 
@@ -138,9 +135,7 @@ def _batch_run_episodes(
             resets = np.zeros(num_envs, dtype=bool)
         else:
             resets = episode_len == max_episode_len
-        resets = np.logical_or(
-            resets, [info.get("needs_reset", False) for info in infos]
-        )
+        resets = np.logical_or(resets, [info.get("needs_reset", False) for info in infos])
 
         # Make mask. 0 if done/reset, 1 if pass
         end = np.logical_or(resets, dones)
@@ -177,9 +172,7 @@ def _batch_run_episodes(
                     eval_episode_lens.append(episode_lengths[index])
             termination_conditions = total_time >= n_steps
             if not termination_conditions:
-                unfinished_index = np.where(
-                    episode_indices == first_unfinished_episode
-                )[0]
+                unfinished_index = np.where(episode_indices == first_unfinished_episode)[0]
                 if total_time + episode_len[unfinished_index] >= n_steps:
                     termination_conditions = True
                     if first_unfinished_episode == 0:
@@ -206,9 +199,7 @@ def _batch_run_episodes(
         else:
             obss = env.reset(not_end)
 
-    for i, (epi_len, epi_ret) in enumerate(
-        zip(eval_episode_lens, eval_episode_returns)
-    ):
+    for i, (epi_len, epi_ret) in enumerate(zip(eval_episode_lens, eval_episode_returns)):
         logger.info("evaluation episode %s length: %s R: %s", i, epi_len, epi_ret)
     scores = [float(r) for r in eval_episode_returns]
     lengths = [float(ln) for ln in eval_episode_lens]
@@ -251,9 +242,7 @@ def batch_run_evaluation_episodes(
         )
 
 
-def eval_performance(
-    env, agent, n_steps, n_episodes, max_episode_len=None, logger=None
-):
+def eval_performance(env, agent, n_steps, n_episodes, max_episode_len=None, logger=None):
     """Run multiple evaluation episodes and return statistics.
 
     Args:
@@ -333,25 +322,43 @@ def create_tb_writer(outdir):
     return tb_writer
 
 
-def record_tb_stats(summary_writer, agent_stats, eval_stats, env_stats, t):
+def record_tb_stats(summary_writer, agent_stats, eval_stats, env_stats, t, stat_types=None):
     cur_time = time.time()
 
+    funcs = defaultdict(lambda: summary_writer.add_scalar)
+    if stat_types:
+        funcs.update({
+            "scalar": summary_writer.add_scalar,
+            "histogram": summary_writer.add_histogram,
+            "image": summary_writer.add_image,
+            "images": summary_writer.add_images,
+        })
+
     for stat, value in agent_stats:
-        summary_writer.add_scalar("agent/" + stat, value, t, cur_time)
+        if stat_types:
+            method, kwargs = stat_types[stat]
+            f = funcs[method]
+        else:
+            f = funcs[stat]
+            kwargs = {}
+        f("agent/" + stat, value, global_step=t, walltime=cur_time, **kwargs)
 
     for stat, value in env_stats:
-        summary_writer.add_scalar("env/" + stat, value, t, cur_time)
+        summary_writer.add_scalar("env/" + stat, value, global_step=t, walltime=cur_time)
 
-    for stat in ("mean", "median", "max", "min", "stdev"):
-        value = eval_stats[stat]
-        summary_writer.add_scalar("eval/" + stat, value, t, cur_time)
+    if eval_stats:
+        for stat in ("mean", "median", "max", "min", "stdev"):
+            value = eval_stats[stat]
+            summary_writer.add_scalar("eval/" + stat, value, global_step=t, walltime=cur_time)
 
-    summary_writer.add_scalar(
-        "extras/meanplusstdev", eval_stats["mean"] + eval_stats["stdev"], t, cur_time
-    )
-    summary_writer.add_scalar(
-        "extras/meanminusstdev", eval_stats["mean"] - eval_stats["stdev"], t, cur_time
-    )
+        summary_writer.add_scalar("extras/meanplusstdev",
+                                  eval_stats["mean"] + eval_stats["stdev"],
+                                  global_step=t,
+                                  walltime=cur_time)
+        summary_writer.add_scalar("extras/meanminusstdev",
+                                  eval_stats["mean"] - eval_stats["stdev"],
+                                  global_step=t,
+                                  walltime=cur_time)
 
     # manually flush to avoid loosing events on termination
     summary_writer.flush()
@@ -413,21 +420,20 @@ class Evaluator(object):
             the best-so-far score, the current agent is saved.
         use_tensorboard (bool): Additionally log eval stats to tensorboard
     """
-
     def __init__(
-        self,
-        agent,
-        env,
-        n_steps,
-        n_episodes,
-        eval_interval,
-        outdir,
-        max_episode_len=None,
-        step_offset=0,
-        evaluation_hooks=(),
-        save_best_so_far_agent=True,
-        logger=None,
-        use_tensorboard=False,
+            self,
+            agent,
+            env,
+            n_steps,
+            n_episodes,
+            eval_interval,
+            outdir,
+            max_episode_len=None,
+            step_offset=0,
+            evaluation_hooks=(),
+            save_best_so_far_agent=True,
+            logger=None,
+            use_tensorboard=False,
     ):
         assert (n_steps is None) != (n_episodes is None), (
             "One of n_steps or n_episodes must be None. "
@@ -476,20 +482,16 @@ class Evaluator(object):
         env_stats = self.env_get_stats()
         custom_env_values = tuple(tup[1] for tup in env_stats)
         mean = eval_stats["mean"]
-        values = (
-            (
-                t,
-                episodes,
-                elapsed,
-                mean,
-                eval_stats["median"],
-                eval_stats["stdev"],
-                eval_stats["max"],
-                eval_stats["min"],
-            )
-            + custom_values
-            + custom_env_values
-        )
+        values = ((
+            t,
+            episodes,
+            elapsed,
+            mean,
+            eval_stats["median"],
+            eval_stats["stdev"],
+            eval_stats["max"],
+            eval_stats["min"],
+        ) + custom_values + custom_env_values)
         record_stats(self.outdir, values)
 
         if self.use_tensorboard:
@@ -538,18 +540,17 @@ class AsyncEvaluator(object):
             if the score (= mean return of evaluation episodes) exceeds
             the best-so-far score, the current agent is saved.
     """
-
     def __init__(
-        self,
-        n_steps,
-        n_episodes,
-        eval_interval,
-        outdir,
-        max_episode_len=None,
-        step_offset=0,
-        evaluation_hooks=(),
-        save_best_so_far_agent=True,
-        logger=None,
+            self,
+            n_steps,
+            n_episodes,
+            eval_interval,
+            outdir,
+            max_episode_len=None,
+            step_offset=0,
+            evaluation_hooks=(),
+            save_best_so_far_agent=True,
+            logger=None,
     ):
         assert (n_steps is None) != (n_episodes is None), (
             "One of n_steps or n_episodes must be None. "
@@ -568,9 +569,7 @@ class AsyncEvaluator(object):
         self.logger = logger or logging.getLogger(__name__)
 
         # Values below are shared among processes
-        self.prev_eval_t = mp.Value(
-            "l", self.step_offset - self.step_offset % self.eval_interval
-        )
+        self.prev_eval_t = mp.Value("l", self.step_offset - self.step_offset % self.eval_interval)
         self._max_score = mp.Value("f", np.finfo(np.float32).min)
         self.wrote_header = mp.Value("b", False)
 
@@ -607,20 +606,16 @@ class AsyncEvaluator(object):
         env_stats = env_get_stats()
         custom_env_values = tuple(tup[1] for tup in env_stats)
         mean = eval_stats["mean"]
-        values = (
-            (
-                t,
-                episodes,
-                elapsed,
-                mean,
-                eval_stats["median"],
-                eval_stats["stdev"],
-                eval_stats["max"],
-                eval_stats["min"],
-            )
-            + custom_values
-            + custom_env_values
-        )
+        values = ((
+            t,
+            episodes,
+            elapsed,
+            mean,
+            eval_stats["median"],
+            eval_stats["stdev"],
+            eval_stats["max"],
+            eval_stats["min"],
+        ) + custom_values + custom_env_values)
         record_stats(self.outdir, values)
 
         if self.record_tb_stats_queue is not None:
@@ -639,9 +634,7 @@ class AsyncEvaluator(object):
 
         with self._max_score.get_lock():
             if mean > self._max_score.value:
-                self.logger.info(
-                    "The best score is updated %s -> %s", self._max_score.value, mean
-                )
+                self.logger.info("The best score is updated %s -> %s", self._max_score.value, mean)
                 self._max_score.value = mean
                 if self.save_best_so_far_agent:
                     save_agent(agent, "best", self.outdir, self.logger)

@@ -152,31 +152,33 @@ class RND(torch.nn.Module):
         if len(states.shape) == 3:
             states = states.unsqueeze(0)
         with torch.no_grad():
-            states = self.obs_normalizer(states)
+            states = self.obs_normalizer(states, update=update_params)
+
         predicted_vector = self.predictor(states)
         target_vector = self.target(states)
 
         intrinsic_reward = torch.nn.functional.mse_loss(predicted_vector,
                                                         target_vector,
-                                                        reduction='mean')
-        intrinsic_reward = intrinsic_reward.unsqueeze(0)  # dim: 1,
-        loss = intrinsic_reward.mean(dim=0)
+                                                        reduction='none').mean(axis=1)
+        loss = intrinsic_reward.mean()
 
+        int_rew_mean = self.reward_normalizer.mean.item()
+        int_rew_std = self.reward_normalizer.std.item()
         if log:
             self.logger.debug(
                 'int_rew: %s, rnd_loss: %s, mean: %s, std: %s',
                 round(intrinsic_reward.mean().item(), 4),
                 round(loss.item(), 4),
-                round(self.reward_normalizer.mean.item(), 4),
-                round(self.reward_normalizer.std.item(), 4),
+                round(int_rew_mean, 4),
+                round(int_rew_std, 4),
             )
 
         if update_params:
-            self.optimizer.zero_grad()
+            self.optimizer.zero_grad(set_to_none=True)
             loss.backward(inputs=list(self.predictor.parameters()))
             self.optimizer.step()
 
         with torch.no_grad():
             intrinsic_reward = self.reward_normalizer(intrinsic_reward, mean=False).detach()
 
-        return intrinsic_reward
+        return intrinsic_reward, int_rew_mean, int_rew_std, states

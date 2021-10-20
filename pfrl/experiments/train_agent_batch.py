@@ -1,10 +1,11 @@
 import logging
 import os
 from collections import deque
+from time import time
 
 import numpy as np
 
-from pfrl.experiments.evaluator import Evaluator, save_agent
+from pfrl.experiments.evaluator import Evaluator, save_agent, create_tb_writer, record_tb_stats
 
 
 def train_agent_batch(
@@ -22,6 +23,7 @@ def train_agent_batch(
         step_hooks=(),
         return_window_size=100,
         logger=None,
+        use_tensorboard=False,
 ):
     """Train an agent in a batch environment.
 
@@ -42,11 +44,16 @@ def train_agent_batch(
             (env, agent, step) as arguments. They are called every step.
             See pfrl.experiments.hooks.
         logger (logging.Logger): Logger used in this function.
+        use_tensorboard (bool): Additionally log eval stats to tensorboard
     Returns:
         List of evaluation episode stats dict.
     """
 
     logger = logger or logging.getLogger(__name__)
+
+    if use_tensorboard:
+        tb_writer = create_tb_writer(outdir)
+
     recent_returns = deque(maxlen=return_window_size)
 
     num_envs = env.num_envs
@@ -62,6 +69,8 @@ def train_agent_batch(
         agent.t = step_offset
 
     eval_stats_history = []  # List of evaluation episode stats dict
+    s_time = time()
+    prev_t = step_offset
     try:
         while True:
             valid_actions = None
@@ -107,14 +116,32 @@ def train_agent_batch(
                     hook(env, agent, t)
 
             if (log_interval is not None and t >= log_interval and t % log_interval < num_envs):
-                logger.info("outdir:{} step:{} episode:{} last_R: {} average_R:{}".format(  # NOQA
-                    outdir,
-                    t,
-                    np.sum(episode_idx),
-                    recent_returns[-1] if recent_returns else np.nan,
-                    np.mean(recent_returns) if recent_returns else np.nan,
-                ))
-                logger.info("statistics: {}".format(agent.get_statistics()))
+                agent_stats = agent.get_statistics()
+                e_time = time()
+                steps_per_second = (t - prev_t) / (e_time - s_time)
+                s_time = e_time
+                prev_t = t
+                logger.info(
+                    "outdir:{} sps:{} step:{} episode:{} last_R: {} average_R:{}".format(  # NOQA
+                        outdir,
+                        int(steps_per_second),
+                        t,
+                        np.sum(episode_idx),
+                        recent_returns[-1] if recent_returns else np.nan,
+                        np.mean(recent_returns) if recent_returns else np.nan,
+                    ))
+                logger.info("statistics: {}".format(agent_stats))
+
+                if use_tensorboard:
+                    stat_types = None
+                    if hasattr(agent, 'get_stat_types'):
+                        stat_types = agent.get_stat_types()
+                    if hasattr(agent, 'get_tensorboard_stats'):
+                        tb_stats = agent.get_tensorboard_stats()
+                        agent_stats += tb_stats
+                        agent_stats += [("steps_per_second", steps_per_second)]
+                    record_tb_stats(tb_writer, agent_stats, {}, {}, t, stat_types=stat_types)
+
             if evaluator:
                 eval_score = evaluator.evaluate_if_necessary(t=t, episodes=np.sum(episode_idx))
                 if eval_score is not None:
@@ -250,6 +277,7 @@ def train_agent_batch_with_evaluation(
         return_window_size=return_window_size,
         log_interval=log_interval,
         step_hooks=step_hooks,
+        use_tensorboard=use_tensorboard,
         logger=logger,
     )
 
