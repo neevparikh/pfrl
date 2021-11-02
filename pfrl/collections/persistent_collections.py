@@ -12,7 +12,6 @@ from pfrl.collections.random_access_queue import RandomAccessQueue
 _VanillaFS = collections.namedtuple("_VanillaFS", "exists open makedirs")
 _chainerio_available = False
 
-
 _INDEX_FILENAME_FORMAT = "chunk.{}.idx"
 _DATA_FILENAME_FORMAT = "chunk.{}.data"
 
@@ -31,7 +30,7 @@ class _ChunkReader(object):
         offset = 0
         while True:
             # TODO: try iter_unpack()
-            buf = idata[offset : offset + index_format_size]
+            buf = idata[offset:offset + index_format_size]
 
             if len(buf) != index_format_size:
                 break
@@ -49,7 +48,7 @@ class _ChunkReader(object):
 
         for index in indices:
             g, o, l, c, _ = index
-            data = cdata[o : o + l]
+            data = cdata[o:o + l]
             crc = binascii.crc32(data)
             assert crc == c
             if do_unpickle:
@@ -182,7 +181,6 @@ class PersistentRandomAccessQueue(object):
         logger: logger
 
     """
-
     def __init__(self, basedir, maxlen, *, ancestor=None, logger=None):
         assert maxlen is None or maxlen > 0
         self.basedir = basedir
@@ -209,15 +207,12 @@ class PersistentRandomAccessQueue(object):
             self.gen = 0
             self.fs.makedirs(self.datadir, exist_ok=True)
 
-        self.tail = _ChunkWriter(
-            self.datadir, self.gen, self.chunk_size, self.fs, do_pickle=True
-        )  # Last chunk to be appended
+        self.tail = _ChunkWriter(self.datadir, self.gen, self.chunk_size, self.fs,
+                                 do_pickle=True)  # Last chunk to be appended
         self.gen += 1
 
         if self.logger:
-            self.logger.info(
-                "Initial buffer size=%d, next gen=%d", len(self.buffer), self.gen
-            )
+            self.logger.info("Initial buffer size=%d, next gen=%d", len(self.buffer), self.gen)
 
     def _load_meta(self, ancestor, maxlen):
         # This must be checked by single process to avoid race
@@ -269,9 +264,11 @@ class PersistentRandomAccessQueue(object):
 
     def _append(self, value):
         if self.tail.is_full():
-            self.tail = _ChunkWriter(
-                self.datadir, self.gen, self.chunk_size, self.fs, do_pickle=True
-            )
+            self.tail = _ChunkWriter(self.datadir,
+                                     self.gen,
+                                     self.chunk_size,
+                                     self.fs,
+                                     do_pickle=True)
             if self.logger:
                 self.logger.info("Chunk rotated. New gen=%d", self.gen)
             self.gen += 1
@@ -336,13 +333,10 @@ class PersistentRandomAccessQueue(object):
             if _chainerio_available:
                 # _chainerio_available must be None for now
                 raise NotImplementedError(
-                    "Internal Error: chainerio support is not yet implemented"
-                )
+                    "Internal Error: chainerio support is not yet implemented")
             else:
                 # When chainerio is not installed
-                self.fs = _VanillaFS(
-                    open=open, exists=os.path.exists, makedirs=os.makedirs
-                )
+                self.fs = _VanillaFS(open=open, exists=os.path.exists, makedirs=os.makedirs)
         else:
             self.fs = fs
 
@@ -394,8 +388,8 @@ class PersistentRandomAccessQueue(object):
                 break
             _ = reader.read_chunks(maxlen, rank_data)
             if self.logger:
-                self.logger.info(
-                    "%d data loaded to buffer (rank=%d)", len(rank_data), self.comm_rank
-                )
+                self.logger.info("%d data loaded to buffer (rank=%d)",
+                                 len(rank_data),
+                                 self.comm_rank)
             self.buffer.extend(rank_data)
         return meta

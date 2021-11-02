@@ -10,7 +10,6 @@ class StepHook(object, metaclass=ABCMeta):
     You don't need to inherit this class to define your own hooks. Any callable
     that accepts (env, agent, step) as arguments can be used as a hook.
     """
-
     @abstractmethod
     def __call__(self, env, agent, step):
         """Call the hook.
@@ -43,7 +42,6 @@ class LinearInterpolationHook(StepHook):
         stop_value (float): Stop value.
         setter (callable): (env, agent, value) -> None
     """
-
     def __init__(self, total_steps, start_value, stop_value, setter):
         self.total_steps = total_steps
         self.start_value = start_value
@@ -51,7 +49,5 @@ class LinearInterpolationHook(StepHook):
         self.setter = setter
 
     def __call__(self, env, agent, step):
-        value = np.interp(
-            step, [1, self.total_steps], [self.start_value, self.stop_value]
-        )
+        value = np.interp(step, [1, self.total_steps], [self.start_value, self.stop_value])
         self.setter(env, agent, value)

@@ -56,18 +56,13 @@ class DoublePAL(pal.PAL):
             batch_terminal = exp_batch["is_state_terminal"]
 
             # T Q: Bellman operator
-            t_q = (
-                batch_rewards
-                + exp_batch["discount"] * (1.0 - batch_terminal) * next_q_max
-            )
+            t_q = (batch_rewards + exp_batch["discount"] * (1.0 - batch_terminal) * next_q_max)
 
             # T_PAL Q: persistent advantage learning operator
-            cur_advantage = torch.reshape(
-                target_qout.compute_advantage(batch_actions), (batch_size,)
-            )
-            next_advantage = torch.reshape(
-                target_next_qout.compute_advantage(batch_actions), (batch_size,)
-            )
+            cur_advantage = torch.reshape(target_qout.compute_advantage(batch_actions),
+                                          (batch_size,))
+            next_advantage = torch.reshape(target_next_qout.compute_advantage(batch_actions),
+                                           (batch_size,))
             tpal_q = t_q + self.alpha * torch.max(cur_advantage, next_advantage)
 
         return batch_q, tpal_q

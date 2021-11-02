@@ -72,7 +72,6 @@ class ABC(env.Env):
             observable settings, the n-th episode uses non-shifted obsevations
             if n is odd, otherwise uses shifted observations.
     """
-
     def __init__(
         self,
         size=2,
@@ -116,9 +115,7 @@ class ABC(env.Env):
             # For partially observable settings, observations are shifted by
             # episode-dependent some offsets.
             if self.deterministic:
-                self._offset = (getattr(self, "_offset", 0) + 1) % (
-                    self.n_max_offset + 1
-                )
+                self._offset = (getattr(self, "_offset", 0) + 1) % (self.n_max_offset + 1)
             else:
                 self._offset = np.random.randint(self.n_max_offset + 1)
         else:
@@ -160,7 +157,7 @@ class ABC(env.Env):
 
     def close(self):
         pass
-    
+
     @staticmethod
     def make_random_episodes(n_episodes=10, obs_size=2, n_actions=3):
         episodes = []
@@ -170,22 +167,17 @@ class ABC(env.Env):
             last_state = np.random.uniform(-1, 1, size=obs_size)
             for t in range(episode_length):
                 state = np.random.uniform(-1, 1, size=obs_size)
-                episode.append(
-                    {
-                        "state": last_state,
-                        "action": np.random.randint(n_actions),
-                        "reward": np.random.uniform(-1, 1),
-                        "nonterminal": (
-                            np.random.randint(2) if t == episode_length - 1 else 1
-                        ),
-                        "next_state": state,
-                        "recurrent_state": None,
-                        "next_recurrent_state": None,
-                    }
-                )
+                episode.append({
+                    "state": last_state,
+                    "action": np.random.randint(n_actions),
+                    "reward": np.random.uniform(-1, 1),
+                    "nonterminal": (np.random.randint(2) if t == episode_length - 1 else 1),
+                    "next_state": state,
+                    "recurrent_state": None,
+                    "next_recurrent_state": None,
+                })
                 last_state = state
             episodes.append(episode)
 
         assert len(episodes) == n_episodes
         return episodes
-

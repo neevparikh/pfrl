@@ -12,7 +12,6 @@ class SerialVectorEnv(pfrl.env.VectorEnv):
     Args:
         env_fns (list of gym.Env): List of gym.Env.
     """
-
     def __init__(self, envs):
         self.envs = envs
         self.last_obs = [None] * self.num_envs
@@ -28,10 +27,7 @@ class SerialVectorEnv(pfrl.env.VectorEnv):
     def reset(self, mask=None):
         if mask is None:
             mask = np.zeros(self.num_envs)
-        obs = [
-            env.reset() if not m else o
-            for m, env, o in zip(mask, self.envs, self.last_obs)
-        ]
+        obs = [env.reset() if not m else o for m, env, o in zip(mask, self.envs, self.last_obs)]
         self.last_obs = obs
         return obs
 

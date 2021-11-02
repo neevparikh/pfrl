@@ -11,7 +11,6 @@ class Boltzmann(pfrl.explorer.Explorer):
     Args:
         T (float): Temperature of Boltzmann distribution.
     """
-
     def __init__(self, T=1.0):
         self.T = T
 
@@ -20,9 +19,7 @@ class Boltzmann(pfrl.explorer.Explorer):
         assert isinstance(action_value, pfrl.action_value.DiscreteActionValue)
         n_actions = action_value.q_values.shape[1]
         with torch.no_grad():
-            probs = (
-                F.softmax(action_value.q_values / self.T, dim=-1).cpu().numpy().ravel()
-            )
+            probs = (F.softmax(action_value.q_values / self.T, dim=-1).cpu().numpy().ravel())
         return np.random.choice(np.arange(n_actions), p=probs)
 
     def __repr__(self):

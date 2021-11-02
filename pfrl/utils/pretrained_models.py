@@ -14,10 +14,8 @@ import zipfile
 
 import filelock
 
-_models_root = os.environ.get(
-    "PFRL_MODELS_ROOT", os.path.join(os.path.expanduser("~"), ".pfrl", "models")
-)
-
+_models_root = os.environ.get("PFRL_MODELS_ROOT",
+                              os.path.join(os.path.expanduser("~"), ".pfrl", "models"))
 
 MODELS = {
     "DQN": ["best", "final"],
@@ -72,17 +70,15 @@ def _reporthook(count, block_size, total_size):
         speed = float("inf")
     percent = progress_size / total_size * 100
     eta = int((total_size - progress_size) / speed)
-    sys.stdout.write(
-        "\r{:3.0f} {:4.0f}MiB {:4.0f}MiB {:6.0f}KiB/s {:4d}:{:02d}:{:02d}".format(
-            percent,
-            total_size / (1 << 20),
-            progress_size / (1 << 20),
-            speed / (1 << 10),
-            eta // 60 // 60,
-            (eta // 60) % 60,
-            eta % 60,
-        )
-    )
+    sys.stdout.write("\r{:3.0f} {:4.0f}MiB {:4.0f}MiB {:6.0f}KiB/s {:4d}:{:02d}:{:02d}".format(
+        percent,
+        total_size / (1 << 20),
+        progress_size / (1 << 20),
+        speed / (1 << 10),
+        eta // 60 // 60,
+        (eta // 60) % 60,
+        eta % 60,
+    ))
     sys.stdout.flush()
 
 
@@ -169,9 +165,7 @@ def download_model(alg, env, model_type="best"):
         bool: whether the model was already cached.
     """
     assert alg in MODELS, "No pretrained models for " + alg + "."
-    assert model_type in MODELS[alg], (
-        'Model type "' + model_type + '" is not supported.'
-    )
+    assert model_type in MODELS[alg], ('Model type "' + model_type + '" is not supported.')
     env = env.replace("NoFrameskip-v4", "")
     model_path, is_cached = download_and_store_model(alg, download_url, env, model_type)
     return model_path, is_cached

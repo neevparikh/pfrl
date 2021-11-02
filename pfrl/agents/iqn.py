@@ -20,24 +20,19 @@ def cosine_basis_functions(x, n_basis_functions=64):
     """
     # Equation (4) in the IQN paper has an error stating i=0,...,n-1.
     # Actually i=1,...,n is correct (personal communication)
-    i_pi = (
-        torch.arange(1, n_basis_functions + 1, dtype=torch.float, device=x.device)
-        * np.pi
-    )
+    i_pi = (torch.arange(1, n_basis_functions + 1, dtype=torch.float, device=x.device) * np.pi)
     embedding = torch.cos(x[..., None] * i_pi)
     assert embedding.shape == x.shape + (n_basis_functions,)
     return embedding
 
 
 class CosineBasisLinear(nn.Module):
-
     """Linear layer following cosine basis functions.
 
     Args:
         n_basis_functions (int): Number of cosine basis functions.
         out_size (int): Output size.
     """
-
     def __init__(self, n_basis_functions, out_size):
         super().__init__()
         self.linear = nn.Linear(n_basis_functions, out_size)
@@ -81,7 +76,6 @@ def _evaluate_psi_x_with_quantile_thresholds(psi_x, phi, f, taus):
 
 
 class ImplicitQuantileQFunction(nn.Module):
-
     """Implicit quantile network-based Q-function.
 
     Args:
@@ -96,7 +90,6 @@ class ImplicitQuantileQFunction(nn.Module):
     Returns:
         QuantileDiscreteActionValue: Action values.
     """
-
     def __init__(self, psi, phi, f):
         super().__init__()
         self.psi = psi
@@ -117,15 +110,12 @@ class ImplicitQuantileQFunction(nn.Module):
         assert psi_x.shape[0] == batch_size
 
         def evaluate_with_quantile_thresholds(taus):
-            return _evaluate_psi_x_with_quantile_thresholds(
-                psi_x, self.phi, self.f, taus
-            )
+            return _evaluate_psi_x_with_quantile_thresholds(psi_x, self.phi, self.f, taus)
 
         return evaluate_with_quantile_thresholds
 
 
 class RecurrentImplicitQuantileQFunction(Recurrent, nn.Module):
-
     """Recurrent implicit quantile network-based Q-function.
 
     Args:
@@ -141,7 +131,6 @@ class RecurrentImplicitQuantileQFunction(Recurrent, nn.Module):
     Returns:
         ImplicitQuantileDiscreteActionValue: Action values.
     """
-
     def __init__(self, psi, phi, f):
         super().__init__()
         self.psi = psi
@@ -166,9 +155,7 @@ class RecurrentImplicitQuantileQFunction(Recurrent, nn.Module):
         assert psi_x.ndim == 2
 
         def evaluate_with_quantile_thresholds(taus):
-            return _evaluate_psi_x_with_quantile_thresholds(
-                psi_x, self.phi, self.f, taus
-            )
+            return _evaluate_psi_x_with_quantile_thresholds(psi_x, self.phi, self.f, taus)
 
         return evaluate_with_quantile_thresholds, recurrent_state
 
@@ -256,7 +243,6 @@ def compute_weighted_value_loss(eltwise_loss, weights, batch_accumulator="mean")
 
 
 class IQN(dqn.DQN):
-
     """Implicit Quantile Networks.
 
     See https://arxiv.org/abs/1806.06923.
@@ -276,7 +262,6 @@ class IQN(dqn.DQN):
 
     For other arguments, see pfrl.agents.DQN.
     """
-
     def __init__(self, *args, **kwargs):
         # N=N'=64 and K=32 were used in the IQN paper's experiments
         # (personal communication)
@@ -317,8 +302,7 @@ class IQN(dqn.DQN):
             dtype=torch.float,
         )
         target_next_maxz = target_next_tau2av(taus_prime).evaluate_actions_as_quantiles(
-            greedy_actions
-        )
+            greedy_actions)
 
         batch_rewards = exp_batch["reward"]
         batch_terminal = exp_batch["is_state_terminal"]
@@ -330,9 +314,7 @@ class IQN(dqn.DQN):
         batch_terminal = batch_terminal.unsqueeze(-1)
         batch_discount = batch_discount.unsqueeze(-1)
 
-        return (
-            batch_rewards + batch_discount * (1.0 - batch_terminal) * target_next_maxz
-        )
+        return (batch_rewards + batch_discount * (1.0 - batch_terminal) * target_next_maxz)
 
     def _compute_y_and_taus(self, exp_batch):
         """Compute a batch of predicted return distributions.
@@ -395,9 +377,7 @@ class IQN(dqn.DQN):
                 batch_accumulator=self.batch_accumulator,
             )
         else:
-            return compute_value_loss(
-                eltwise_loss, batch_accumulator=self.batch_accumulator
-            )
+            return compute_value_loss(eltwise_loss, batch_accumulator=self.batch_accumulator)
 
     def _evaluate_model_and_update_recurrent_states(self, batch_obs):
         batch_xs = self.batch_states(batch_obs, self.device, self.phi)

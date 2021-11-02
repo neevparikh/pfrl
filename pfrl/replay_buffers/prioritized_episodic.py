@@ -24,8 +24,7 @@ class PrioritizedEpisodicReplayBuffer(EpisodicReplayBuffer, PriorityWeightError)
     ):
         self.current_episode = collections.defaultdict(list)
         self.episodic_memory = PrioritizedBuffer(
-            capacity=None, wait_priority_after_sampling=wait_priority_after_sampling
-        )
+            capacity=None, wait_priority_after_sampling=wait_priority_after_sampling)
         self.memory = RandomAccessQueue(maxlen=capacity)
         self.capacity_left = capacity
         self.default_priority_func = default_priority_func

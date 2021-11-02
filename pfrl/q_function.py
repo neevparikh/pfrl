@@ -3,7 +3,6 @@ from abc import ABCMeta, abstractmethod
 
 class StateQFunction(object, metaclass=ABCMeta):
     """Abstract Q-function with state input."""
-
     @abstractmethod
     def __call__(self, x):
         """Evaluates Q-function
@@ -20,7 +19,6 @@ class StateQFunction(object, metaclass=ABCMeta):
 
 class StateActionQFunction(object, metaclass=ABCMeta):
     """Abstract Q-function with state and action input."""
-
     @abstractmethod
     def __call__(self, x, a):
         """Evaluates Q-function

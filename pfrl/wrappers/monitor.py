@@ -15,7 +15,6 @@ class Monitor(_GymMonitor):
     For details, see
     https://github.com/openai/gym/blob/master/gym/wrappers/monitor.py
     """
-
     def _start(
         self,
         directory,
@@ -27,10 +26,8 @@ class Monitor(_GymMonitor):
         mode=None,
     ):
         if self.env_semantics_autoreset:
-            raise NotImplementedError(
-                "Detect 'semantics.autoreset=True' in `env.metadata`, "
-                "which means the env is from deprecated OpenAI Universe."
-            )
+            raise NotImplementedError("Detect 'semantics.autoreset=True' in `env.metadata`, "
+                                      "which means the env is from deprecated OpenAI Universe.")
         ret = super()._start(
             directory=directory,
             video_callable=video_callable,
@@ -58,14 +55,13 @@ class _StatsRecorder(_GymStatsRecorder):
     For details, see
     https://github.com/openai/gym/blob/master/gym/wrappers/monitoring/stats_recorder.py
     """
-
     def __init__(
-        self,
-        directory,
-        file_prefix,
-        autoreset=False,
-        env_id=None,
-        logger=getLogger(__name__),
+            self,
+            directory,
+            file_prefix,
+            autoreset=False,
+            env_id=None,
+            logger=getLogger(__name__),
     ):
         super().__init__(directory, file_prefix, autoreset=autoreset, env_id=env_id)
         self._save_completed = True
@@ -75,10 +71,8 @@ class _StatsRecorder(_GymStatsRecorder):
         assert not self.closed
 
         if self.done is not None and not self.done and self.steps > 0:
-            self.logger.debug(
-                "Tried to reset the env which is not done=True. "
-                "StatsRecorder completes the last episode."
-            )
+            self.logger.debug("Tried to reset the env which is not done=True. "
+                              "StatsRecorder completes the last episode.")
             self.save_complete()
 
         self.done = False

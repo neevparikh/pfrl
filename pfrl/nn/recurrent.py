@@ -12,7 +12,6 @@ class Recurrent(object):
     `pfrl.nn.RecurrentBranched` or write your module
     extending this class and `torch.nn.Module`.
     """
-
     def forward(self, packed_input, recurrent_state):
         """Multi-step batch forward computation.
 

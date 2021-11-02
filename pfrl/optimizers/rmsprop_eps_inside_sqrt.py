@@ -4,7 +4,6 @@ import torch
 # mypy somehow complains about `torch.optim.RMSprop` as of torch==1.5.0.
 class RMSpropEpsInsideSqrt(torch.optim.RMSprop):  # type: ignore
     """torch.optim.RMSprop with eps inside sqrt."""
-
     def step(self, closure=None):
         """Performs a single optimization step.
         Arguments:
@@ -46,11 +45,7 @@ class RMSpropEpsInsideSqrt(torch.optim.RMSprop):  # type: ignore
                 if group["centered"]:
                     grad_avg = state["grad_avg"]
                     grad_avg.mul_(alpha).add_(1 - alpha, grad)
-                    avg = (
-                        square_avg.addcmul(-1, grad_avg, grad_avg)
-                        .add_(group["eps"])
-                        .sqrt_()
-                    )
+                    avg = (square_avg.addcmul(-1, grad_avg, grad_avg).add_(group["eps"]).sqrt_())
                 else:
                     avg = square_avg.add(group["eps"]).sqrt_()
 
@@ -66,7 +61,6 @@ class RMSpropEpsInsideSqrt(torch.optim.RMSprop):  # type: ignore
 
 class SharedRMSpropEpsInsideSqrt(RMSpropEpsInsideSqrt):
     """RMSpropEpsInsideSqrt with non-lazy state initialization."""
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for group in self.param_groups:

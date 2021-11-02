@@ -112,23 +112,20 @@ class A2C(agent.AttributeSavingMixin, agent.BatchAgent):
         obs_shape = obs_shape[1:]
         action_shape = action.shape[1:]
 
-        self.states = torch.zeros(
-            self.update_steps + 1,
-            self.num_processes,
-            *obs_shape,
-            device=self.device,
-            dtype=torch.float
-        )
-        self.actions = torch.zeros(
-            self.update_steps,
-            self.num_processes,
-            *action_shape,
-            device=self.device,
-            dtype=torch.float
-        )
-        self.rewards = torch.zeros(
-            self.update_steps, self.num_processes, device=self.device, dtype=torch.float
-        )
+        self.states = torch.zeros(self.update_steps + 1,
+                                  self.num_processes,
+                                  *obs_shape,
+                                  device=self.device,
+                                  dtype=torch.float)
+        self.actions = torch.zeros(self.update_steps,
+                                   self.num_processes,
+                                   *action_shape,
+                                   device=self.device,
+                                   dtype=torch.float)
+        self.rewards = torch.zeros(self.update_steps,
+                                   self.num_processes,
+                                   device=self.device,
+                                   dtype=torch.float)
         self.value_preds = torch.zeros(
             self.update_steps + 1,
             self.num_processes,
@@ -141,9 +138,10 @@ class A2C(agent.AttributeSavingMixin, agent.BatchAgent):
             device=self.device,
             dtype=torch.float,
         )
-        self.masks = torch.ones(
-            self.update_steps, self.num_processes, device=self.device, dtype=torch.float
-        )
+        self.masks = torch.ones(self.update_steps,
+                                self.num_processes,
+                                device=self.device,
+                                dtype=torch.float)
 
         self.obs_shape = obs_shape
         self.action_shape = action_shape
@@ -153,19 +151,15 @@ class A2C(agent.AttributeSavingMixin, agent.BatchAgent):
             self.value_preds[-1] = next_value
             gae = 0
             for i in reversed(range(self.update_steps)):
-                delta = (
-                    self.rewards[i]
-                    + self.gamma * self.value_preds[i + 1] * self.masks[i]
-                    - self.value_preds[i]
-                )
+                delta = (self.rewards[i] + self.gamma * self.value_preds[i + 1] * self.masks[i] -
+                         self.value_preds[i])
                 gae = delta + self.gamma * self.tau * self.masks[i] * gae
                 self.returns[i] = gae + self.value_preds[i]
         else:
             self.returns[-1] = next_value
             for i in reversed(range(self.update_steps)):
-                self.returns[i] = (
-                    self.rewards[i] + self.gamma * self.returns[i + 1] * self.masks[i]
-                )
+                self.returns[i] = (self.rewards[i] +
+                                   self.gamma * self.returns[i + 1] * self.masks[i])
 
     def update(self):
         with torch.no_grad():
@@ -180,20 +174,15 @@ class A2C(agent.AttributeSavingMixin, agent.BatchAgent):
         action_log_probs = pout.log_prob(actions)
 
         values = values.reshape((self.update_steps, self.num_processes))
-        action_log_probs = action_log_probs.reshape(
-            (self.update_steps, self.num_processes)
-        )
+        action_log_probs = action_log_probs.reshape((self.update_steps, self.num_processes))
         advantages = self.returns[:-1] - values
         value_loss = (advantages * advantages).mean()
         action_loss = -(advantages.detach() * action_log_probs).mean()
 
         self.optimizer.zero_grad()
 
-        (
-            value_loss * self.v_loss_coef
-            + action_loss * self.pi_loss_coef
-            - dist_entropy * self.entropy_coeff
-        ).backward()
+        (value_loss * self.v_loss_coef + action_loss * self.pi_loss_coef -
+         dist_entropy * self.entropy_coeff).backward()
 
         if self.max_grad_norm is not None:
             clip_l2_grad_norm_(self.model.parameters(), self.max_grad_norm)
@@ -203,15 +192,12 @@ class A2C(agent.AttributeSavingMixin, agent.BatchAgent):
         self.t_start = self.t
 
         # Update stats
-        self.average_actor_loss += (1 - self.average_actor_loss_decay) * (
-            float(action_loss) - self.average_actor_loss
-        )
-        self.average_value += (1 - self.average_value_decay) * (
-            float(value_loss) - self.average_value
-        )
-        self.average_entropy += (1 - self.average_entropy_decay) * (
-            float(dist_entropy) - self.average_entropy
-        )
+        self.average_actor_loss += (1 - self.average_actor_loss_decay) * (float(action_loss) -
+                                                                          self.average_actor_loss)
+        self.average_value += (1 - self.average_value_decay) * (float(value_loss) -
+                                                                self.average_value)
+        self.average_entropy += (1 - self.average_entropy_decay) * (float(dist_entropy) -
+                                                                    self.average_entropy)
 
     def batch_act(self, batch_obs):
         if self.training:
@@ -264,11 +250,9 @@ class A2C(agent.AttributeSavingMixin, agent.BatchAgent):
         self.t += 1
 
         if any(batch_reset):
-            warnings.warn(
-                "A2C currently does not support resetting an env without reaching a"
-                " terminal state during training. When receiving True in batch_reset,"
-                " A2C considers it as True in batch_done instead."
-            )  # NOQA
+            warnings.warn("A2C currently does not support resetting an env without reaching a"
+                          " terminal state during training. When receiving True in batch_reset,"
+                          " A2C considers it as True in batch_done instead.")  # NOQA
             batch_done = list(batch_done)
             for i, reset in enumerate(batch_reset):
                 if reset:
@@ -277,11 +261,10 @@ class A2C(agent.AttributeSavingMixin, agent.BatchAgent):
         statevar = self.batch_states(batch_obs, self.device, self.phi)
 
         self.masks[self.t - self.t_start - 1] = torch.as_tensor(
-            [0.0 if done else 1.0 for done in batch_done], device=self.device
-        )
-        self.rewards[self.t - self.t_start - 1] = torch.as_tensor(
-            batch_reward, device=self.device, dtype=torch.float
-        )
+            [0.0 if done else 1.0 for done in batch_done], device=self.device)
+        self.rewards[self.t - self.t_start - 1] = torch.as_tensor(batch_reward,
+                                                                  device=self.device,
+                                                                  dtype=torch.float)
         self.states[self.t - self.t_start] = statevar
 
         if self.t - self.t_start == self.update_steps:

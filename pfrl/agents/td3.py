@@ -195,15 +195,13 @@ class TD3(AttributeSavingMixin, BatchAgent):
             self.target_q_func2
         ):
             next_actions = self.target_policy_smoothing_func(
-                self.target_policy(batch_next_state).sample()
-            )
+                self.target_policy(batch_next_state).sample())
             next_q1 = self.target_q_func1((batch_next_state, next_actions))
             next_q2 = self.target_q_func2((batch_next_state, next_actions))
             next_q = torch.min(next_q1, next_q2)
 
-            target_q = batch_rewards + batch_discount * (
-                1.0 - batch_terminal
-            ) * torch.flatten(next_q)
+            target_q = batch_rewards + batch_discount * (1.0 -
+                                                         batch_terminal) * torch.flatten(next_q)
 
         predict_q1 = torch.flatten(self.q_func1((batch_state, batch_actions)))
         predict_q2 = torch.flatten(self.q_func2((batch_state, batch_actions)))

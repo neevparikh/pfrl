@@ -15,7 +15,6 @@ class AL(dqn.DQN):
 
     For other arguments, see DQN.
     """
-
     def __init__(self, *args, **kwargs):
         self.alpha = kwargs.pop("alpha", 0.9)
         super().__init__(*args, **kwargs)
@@ -57,23 +56,16 @@ class AL(dqn.DQN):
                 target_qout = self.target_model(batch_state)
                 target_next_qout = self.target_model(batch_next_state)
 
-            next_q_max = target_next_qout.max.reshape(
-                batch_size,
-            )
+            next_q_max = target_next_qout.max.reshape(batch_size,)
 
             batch_rewards = exp_batch["reward"]
             batch_terminal = exp_batch["is_state_terminal"]
 
             # T Q: Bellman operator
-            t_q = (
-                batch_rewards
-                + exp_batch["discount"] * (1.0 - batch_terminal) * next_q_max
-            )
+            t_q = (batch_rewards + exp_batch["discount"] * (1.0 - batch_terminal) * next_q_max)
 
             # T_AL Q: advantage learning operator
-            cur_advantage = target_qout.compute_advantage(batch_actions).reshape(
-                (batch_size,)
-            )
+            cur_advantage = target_qout.compute_advantage(batch_actions).reshape((batch_size,))
             tal_q = t_q + self.alpha * cur_advantage
 
         return batch_q, tal_q

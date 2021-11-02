@@ -6,7 +6,6 @@ from pfrl.initializers import init_lecun_normal
 
 class LinearBN(nn.Module):
     """Linear layer with BatchNormalization."""
-
     def __init__(self, in_size, out_size):
         super().__init__()
         self.linear = nn.Linear(in_size, out_size)
@@ -33,7 +32,6 @@ class MLPBN(nn.Module):
             supported.
         last_wscale (float): Scale of weight initialization of the last layer.
     """
-
     def __init__(
         self,
         in_size,

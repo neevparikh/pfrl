@@ -72,7 +72,6 @@ class Agent(object, metaclass=ABCMeta):
 
 class AttributeSavingMixin(object):
     """Mixin that provides save and load functionalities."""
-
     @abstractproperty
     def saved_attributes(self) -> Tuple[str, ...]:
         """Specify attribute names to save or load as a tuple of str."""
@@ -97,13 +96,11 @@ class AttributeSavingMixin(object):
                 attr_value.__save(os.path.join(dirname, attr), ancestors)
             else:
                 if isinstance(
-                    attr_value,
+                        attr_value,
                     (torch.nn.parallel.DistributedDataParallel, torch.nn.DataParallel),
                 ):
                     attr_value = attr_value.module
-                torch.save(
-                    attr_value.state_dict(), os.path.join(dirname, "{}.pt".format(attr))
-                )
+                torch.save(attr_value.state_dict(), os.path.join(dirname, "{}.pt".format(attr)))
         ancestors.pop()
 
     def load(self, dirname: str) -> None:
@@ -125,21 +122,17 @@ class AttributeSavingMixin(object):
                 attr_value.load(os.path.join(dirname, attr))
             else:
                 if isinstance(
-                    attr_value,
+                        attr_value,
                     (torch.nn.parallel.DistributedDataParallel, torch.nn.DataParallel),
                 ):
                     attr_value = attr_value.module
                 attr_value.load_state_dict(
-                    torch.load(
-                        os.path.join(dirname, "{}.pt".format(attr)), map_location
-                    )
-                )
+                    torch.load(os.path.join(dirname, "{}.pt".format(attr)), map_location))
         ancestors.pop()
 
 
 class AsyncAgent(Agent, metaclass=ABCMeta):
     """Abstract asynchronous agent class."""
-
     @abstractproperty
     def process_idx(self) -> Optional[int]:
         """Index of process as integer, 0 for the representative process.
@@ -156,7 +149,6 @@ class AsyncAgent(Agent, metaclass=ABCMeta):
 
 class BatchAgent(Agent, metaclass=ABCMeta):
     """Abstract agent class that can interact with a batch of envs."""
-
     def act(self, obs: Any) -> Any:
         return self.batch_act([obs])[0]
 

@@ -19,7 +19,6 @@ class RandomizeAction(gym.ActionWrapper):
         random_fraction (float): Fraction of actions that will be replaced
             with a random action. It must be in [0, 1].
     """
-
     def __init__(self, env, random_fraction):
         super().__init__(env)
         assert 0 <= random_fraction <= 1

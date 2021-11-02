@@ -16,14 +16,13 @@ class AdditiveOU(explorer.Explorer):
         sigma (float or ndarray): Scale of noise
         start_with_mu (bool): Start the process without noise
     """
-
     def __init__(
-        self,
-        mu=0.0,
-        theta=0.15,
-        sigma=0.3,
-        start_with_mu=False,
-        logger=getLogger(__name__),
+            self,
+            mu=0.0,
+            theta=0.15,
+            sigma=0.3,
+            start_with_mu=False,
+            logger=getLogger(__name__),
     ):
         self.mu = mu
         self.theta = theta
@@ -44,10 +43,9 @@ class AdditiveOU(explorer.Explorer):
             if self.start_with_mu:
                 self.ou_state = np.full(a.shape, self.mu, dtype=np.float32)
             else:
-                sigma_stable = self.sigma / np.sqrt(2 * self.theta - self.theta ** 2)
-                self.ou_state = np.random.normal(
-                    size=a.shape, loc=self.mu, scale=sigma_stable
-                ).astype(np.float32)
+                sigma_stable = self.sigma / np.sqrt(2 * self.theta - self.theta**2)
+                self.ou_state = np.random.normal(size=a.shape, loc=self.mu,
+                                                 scale=sigma_stable).astype(np.float32)
         else:
             self.evolve()
         noise = self.ou_state
@@ -55,6 +53,4 @@ class AdditiveOU(explorer.Explorer):
         return a + noise
 
     def __repr__(self):
-        return "AdditiveOU(mu={}, theta={}, sigma={})".format(
-            self.mu, self.theta, self.sigma
-        )
+        return "AdditiveOU(mu={}, theta={}, sigma={})".format(self.mu, self.theta, self.sigma)

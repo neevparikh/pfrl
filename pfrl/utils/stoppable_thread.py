@@ -8,7 +8,6 @@ class StoppableThread(threading.Thread):
         stop_event (threading.Event): Event that stops the thread if it is set.
         *args, **kwargs: Forwarded to `threading.Thread`.
     """
-
     def __init__(self, stop_event, *args, **kwargs):
         super(StoppableThread, self).__init__(*args, **kwargs)
         self.stop_event = stop_event

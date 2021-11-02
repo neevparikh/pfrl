@@ -27,30 +27,25 @@ class ReplayBuffer(replay_buffer.AbstractReplayBuffer):
         self.num_steps = num_steps
         self.memory = RandomAccessQueue(maxlen=capacity)
         self.last_n_transitions: collections.defaultdict = collections.defaultdict(
-            lambda: collections.deque([], maxlen=num_steps)
-        )
+            lambda: collections.deque([], maxlen=num_steps))
 
-    def append(
-        self,
-        state,
-        action,
-        reward,
-        next_state=None,
-        next_action=None,
-        is_state_terminal=False,
-        env_id=0,
-        **kwargs
-    ):
+    def append(self,
+               state,
+               action,
+               reward,
+               next_state=None,
+               next_action=None,
+               is_state_terminal=False,
+               env_id=0,
+               **kwargs):
         last_n_transitions = self.last_n_transitions[env_id]
-        experience = dict(
-            state=state,
-            action=action,
-            reward=reward,
-            next_state=next_state,
-            next_action=next_action,
-            is_state_terminal=is_state_terminal,
-            **kwargs
-        )
+        experience = dict(state=state,
+                          action=action,
+                          reward=reward,
+                          next_state=next_state,
+                          next_action=next_action,
+                          is_state_terminal=is_state_terminal,
+                          **kwargs)
         last_n_transitions.append(experience)
         if is_state_terminal:
             while last_n_transitions:

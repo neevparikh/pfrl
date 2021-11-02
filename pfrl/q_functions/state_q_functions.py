@@ -30,7 +30,6 @@ class SingleModelStateQFunctionWithDiscreteAction(nn.Module, StateQFunction):
         model (nn.Module):
             Model that is callable and outputs action values.
     """
-
     def __init__(self, model):
         super().__init__()
         self.model = model
@@ -51,7 +50,6 @@ class FCStateQFunctionWithDiscreteAction(SingleModelStateQFunctionWithDiscreteAc
         nonlinearity (callable): Nonlinearity applied after each hidden layer.
         last_wscale (float): Weight scale of the last layer.
     """
-
     def __init__(
         self,
         ndim_obs,
@@ -61,20 +59,16 @@ class FCStateQFunctionWithDiscreteAction(SingleModelStateQFunctionWithDiscreteAc
         nonlinearity=F.relu,
         last_wscale=1.0,
     ):
-        super().__init__(
-            model=MLP(
-                in_size=ndim_obs,
-                out_size=n_actions,
-                hidden_sizes=[n_hidden_channels] * n_hidden_layers,
-                nonlinearity=nonlinearity,
-                last_wscale=last_wscale,
-            )
-        )
+        super().__init__(model=MLP(
+            in_size=ndim_obs,
+            out_size=n_actions,
+            hidden_sizes=[n_hidden_channels] * n_hidden_layers,
+            nonlinearity=nonlinearity,
+            last_wscale=last_wscale,
+        ))
 
 
-class DistributionalSingleModelStateQFunctionWithDiscreteAction(
-    nn.Module, StateQFunction
-):
+class DistributionalSingleModelStateQFunctionWithDiscreteAction(nn.Module, StateQFunction):
     """Distributional Q-function with discrete actions.
 
     Args:
@@ -83,7 +77,6 @@ class DistributionalSingleModelStateQFunctionWithDiscreteAction(
         z_values (ndarray): Returns represented by atoms. Its shape must be
             (n_atoms,).
     """
-
     def __init__(self, model, z_values):
         super().__init__()
         self.model = model
@@ -95,8 +88,7 @@ class DistributionalSingleModelStateQFunctionWithDiscreteAction(
 
 
 class DistributionalFCStateQFunctionWithDiscreteAction(
-    DistributionalSingleModelStateQFunctionWithDiscreteAction
-):
+        DistributionalSingleModelStateQFunctionWithDiscreteAction):
     """Distributional fully-connected Q-function with discrete actions.
 
     Args:
@@ -110,7 +102,6 @@ class DistributionalFCStateQFunctionWithDiscreteAction(
         nonlinearity (callable): Nonlinearity applied after each hidden layer.
         last_wscale (float): Weight scale of the last layer.
     """
-
     def __init__(
         self,
         ndim_obs,
@@ -153,7 +144,6 @@ class FCQuadraticStateQFunction(nn.Module, StateQFunction):
         action_space: action_space
         scale_mu (bool): scale mu by applying tanh if True
     """
-
     def __init__(
         self,
         n_input_channels,
@@ -173,13 +163,10 @@ class FCQuadraticStateQFunction(nn.Module, StateQFunction):
         super().__init__()
         hidden_layers = nn.ModuleList()
         assert n_hidden_layers >= 1
-        hidden_layers.append(
-            init_chainer_default(nn.Linear(n_input_channels, n_hidden_channels))
-        )
+        hidden_layers.append(init_chainer_default(nn.Linear(n_input_channels, n_hidden_channels)))
         for _ in range(n_hidden_layers - 1):
             hidden_layers.append(
-                init_chainer_default(nn.Linear(n_hidden_channels, n_hidden_channels))
-            )
+                init_chainer_default(nn.Linear(n_hidden_channels, n_hidden_channels)))
         self.hidden_layers = hidden_layers
 
         self.v = init_chainer_default(nn.Linear(n_hidden_channels, 1))
@@ -187,9 +174,7 @@ class FCQuadraticStateQFunction(nn.Module, StateQFunction):
         self.mat_diag = init_chainer_default(nn.Linear(n_hidden_channels, n_dim_action))
         non_diag_size = n_dim_action * (n_dim_action - 1) // 2
         if non_diag_size > 0:
-            self.mat_non_diag = init_chainer_default(
-                nn.Linear(n_hidden_channels, non_diag_size)
-            )
+            self.mat_non_diag = init_chainer_default(nn.Linear(n_hidden_channels, non_diag_size))
 
     def forward(self, state):
         h = state
@@ -199,9 +184,7 @@ class FCQuadraticStateQFunction(nn.Module, StateQFunction):
         mu = self.mu(h)
 
         if self.scale_mu:
-            mu = scale_by_tanh(
-                mu, high=self.action_space.high, low=self.action_space.low
-            )
+            mu = scale_by_tanh(mu, high=self.action_space.high, low=self.action_space.low)
 
         mat_diag = torch.exp(self.mat_diag(h))
         if hasattr(self, "mat_non_diag"):
@@ -209,7 +192,7 @@ class FCQuadraticStateQFunction(nn.Module, StateQFunction):
             tril = lower_triangular_matrix(mat_diag, mat_non_diag)
             mat = torch.matmul(tril, torch.transpose(tril, 1, 2))
         else:
-            mat = torch.unsqueeze(mat_diag ** 2, dim=2)
+            mat = torch.unsqueeze(mat_diag**2, dim=2)
         return QuadraticActionValue(
             mu,
             mat,

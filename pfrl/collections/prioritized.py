@@ -55,8 +55,7 @@ class PrioritizedBuffer(Generic[T]):
         return self.data.popleft()
 
     def _sample_indices_and_probabilities(
-        self, n: int, uniform_ratio: float
-    ) -> Tuple[List[int], List[float], float]:
+            self, n: int, uniform_ratio: float) -> Tuple[List[int], List[float], float]:
         total_priority: float = self.priority_sums.sum()
         min_prob = self.priority_mins.min() / total_priority
         indices = []
@@ -84,9 +83,7 @@ class PrioritizedBuffer(Generic[T]):
         ]
         return indices, probs, min_prob
 
-    def sample(
-        self, n: int, uniform_ratio: float = 0
-    ) -> Tuple[List[T], List[float], float]:
+    def sample(self, n: int, uniform_ratio: float = 0) -> Tuple[List[T], List[float], float]:
         """Sample data along with their corresponding probabilities.
 
         Args:
@@ -116,16 +113,13 @@ class PrioritizedBuffer(Generic[T]):
         self.flag_wait_priority = False
         self.sampled_indices = []
 
-    def _uniform_sample_indices_and_probabilities(
-        self, n: int
-    ) -> Tuple[List[int], List[float]]:
+    def _uniform_sample_indices_and_probabilities(self, n: int) -> Tuple[List[int], List[float]]:
         indices = list(sample_n_k(len(self.data), n))
         probabilities = [1 / len(self)] * len(indices)
         return indices, probabilities
 
 
 # Implement operations on nodes of SumTreeQueue
-
 
 # node = left_child, right_child, value
 Node = List[Any]
@@ -266,7 +260,6 @@ class SumTreeQueue(TreeQueue[float]):
     append, update are O(log n)
     summation over an interval is O(log n) per query
     """
-
     def __init__(self):
         super().__init__(op=sum)
 

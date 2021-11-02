@@ -9,6 +9,5 @@ class BoundByTanh(Lambda):
         low (numpy.ndarray): lower bound
         high (numpy.ndarray): upper bound
     """
-
     def __init__(self, low, high):
         super().__init__(lambda x: bound_by_tanh(x, low, high))

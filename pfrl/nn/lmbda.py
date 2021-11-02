@@ -11,7 +11,6 @@ class Lambda(nn.Module):
     Args:
         lambd (callable): Callable object.
     """
-
     def __init__(self, lambd):
         super().__init__()
         self.lambd = lambd

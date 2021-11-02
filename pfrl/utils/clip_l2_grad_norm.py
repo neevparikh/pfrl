@@ -28,9 +28,7 @@ def clip_l2_grad_norm_(parameters, max_norm):
         return torch.nn.utils.clip_grad_norm_(parameters, max_norm)
     parameters = list(filter(lambda p: p.grad is not None, parameters))
     max_norm = float(max_norm)
-    total_norm = np.linalg.norm(
-        [np.linalg.norm(p.grad.detach().cpu().numpy()) for p in parameters]
-    )
+    total_norm = np.linalg.norm([np.linalg.norm(p.grad.detach().cpu().numpy()) for p in parameters])
     clip_coef = max_norm / (total_norm + 1e-6)
     if clip_coef < 1:
         for p in parameters:

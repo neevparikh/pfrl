@@ -13,7 +13,6 @@ def to_factorized_noisy(module, *args, **kwargs):
 
     Currently this fn. only supports torch.nn.Linear (with and without bias)
     """
-
     def func_to_factorized_noisy(module):
         if isinstance(module, nn.Linear):
             return FactorizedNoisyLinear(module, *args, **kwargs)

@@ -72,9 +72,7 @@ def get_recurrent_state_at(recurrent_state, indices, detach):
             recurrent_state = recurrent_state.detach()
         return recurrent_state[:, indices]
     elif isinstance(recurrent_state, tuple):
-        return tuple(
-            get_recurrent_state_at(s, indices, detach) for s in recurrent_state
-        )
+        return tuple(get_recurrent_state_at(s, indices, detach) for s in recurrent_state)
     else:
         raise ValueError("Invalid recurrent state: {}".format(recurrent_state))
 
@@ -97,23 +95,20 @@ def concatenate_recurrent_states(split_recurrent_states):
         non_none_s = next(s for s in split_recurrent_states if s is not None)
         if isinstance(non_none_s, torch.Tensor):
             new_ss = [
-                s if s is not None else torch.zeros_like(non_none_s)
-                for s in split_recurrent_states
+                s if s is not None else torch.zeros_like(non_none_s) for s in split_recurrent_states
             ]
             return torch.stack(new_ss, dim=1)
         elif isinstance(non_none_s, np.ndarray):
             new_ss = [
-                s if s is not None else np.zeros_like(non_none_s)
-                for s in split_recurrent_states
+                s if s is not None else np.zeros_like(non_none_s) for s in split_recurrent_states
             ]
             return np.stack(new_ss, axis=1)
         elif isinstance(non_none_s, tuple):
             return tuple(
                 concatenate_recurrent_states(
-                    [s[i] if s is not None else None for s in split_recurrent_states]
-                )
-                for i in range(len(non_none_s))
-            )
+                    [s[i] if s is not None else None
+                     for s in split_recurrent_states])
+                for i in range(len(non_none_s)))
         else:
             raise ValueError("Invalid recurrent state: {}".format(non_none_s))
 
@@ -200,14 +195,12 @@ def wrap_packed_sequences_recursive(unwrapped, batch_sizes, sorted_indices):
             then the returned value is a tuple of `PackedSequence`s.
     """
     if isinstance(unwrapped, torch.Tensor):
-        return torch.nn.utils.rnn.PackedSequence(
-            unwrapped, batch_sizes=batch_sizes, sorted_indices=sorted_indices
-        )
+        return torch.nn.utils.rnn.PackedSequence(unwrapped,
+                                                 batch_sizes=batch_sizes,
+                                                 sorted_indices=sorted_indices)
     if isinstance(unwrapped, tuple):
         return tuple(
-            wrap_packed_sequences_recursive(x, batch_sizes, sorted_indices)
-            for x in unwrapped
-        )
+            wrap_packed_sequences_recursive(x, batch_sizes, sorted_indices) for x in unwrapped)
     return unwrapped
 
 
@@ -265,9 +258,7 @@ def pack_sequences_recursive(sequences):
         return nn.utils.rnn.pack_sequence(sequences)
     if isinstance(first_seq, tuple):
         return tuple(
-            pack_sequences_recursive([seq[i] for seq in sequences])
-            for i in range(len(first_seq))
-        )
+            pack_sequences_recursive([seq[i] for seq in sequences]) for i in range(len(first_seq)))
     return sequences
 
 

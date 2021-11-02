@@ -17,7 +17,6 @@ class ContinuingTimeLimit(gym.Wrapper):
         max_episode_steps (int): Maximum number of timesteps during an episode,
             after which the env needs a reset.
     """
-
     def __init__(self, env, max_episode_steps):
         super(ContinuingTimeLimit, self).__init__(env)
         self._max_episode_steps = max_episode_steps
@@ -25,9 +24,7 @@ class ContinuingTimeLimit(gym.Wrapper):
         self._elapsed_steps = None
 
     def step(self, action):
-        assert (
-            self._elapsed_steps is not None
-        ), "Cannot call env.step() before calling reset()"
+        assert (self._elapsed_steps is not None), "Cannot call env.step() before calling reset()"
         observation, reward, done, info = self.env.step(action)
         self._elapsed_steps += 1
 

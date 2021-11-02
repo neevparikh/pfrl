@@ -6,7 +6,6 @@ class Env(object, metaclass=ABCMeta):
 
     This serves a minimal interface for RL agents.
     """
-
     @abstractmethod
     def step(self, action):
         raise NotImplementedError()
@@ -22,7 +21,6 @@ class Env(object, metaclass=ABCMeta):
 
 class VectorEnv(object, metaclass=ABCMeta):
     """Parallel RL learning environments."""
-
     @abstractmethod
     def step(self, action):
         raise NotImplementedError()

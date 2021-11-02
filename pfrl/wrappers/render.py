@@ -8,7 +8,6 @@ class Render(gym.Wrapper):
         env (gym.Env): Env to wrap.
         **kwargs: Keyword arguments passed to the render method.
     """
-
     def __init__(self, env, **kwargs):
         super().__init__(env)
         self._kwargs = kwargs

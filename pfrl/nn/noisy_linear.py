@@ -31,7 +31,6 @@ class FactorizedNoisyLinear(nn.Module):
         sigma_scale (float): The hyperparameter sigma_0 in the original paper.
             Scaling factor of the initial weights of noise-scaling parameters.
     """
-
     def __init__(self, mu_link, sigma_scale=0.4):
         super(FactorizedNoisyLinear, self).__init__()
         self._kernel = None

@@ -15,9 +15,7 @@ def _to_recursive(batched: Any, device: torch.device) -> Any:
         raise TypeError("Unsupported type of data")
 
 
-def batch_states(
-    states: Sequence[Any], device: torch.device, phi: Callable[[Any], Any]
-) -> Any:
+def batch_states(states: Sequence[Any], device: torch.device, phi: Callable[[Any], Any]) -> Any:
     """The default method for making batch of observations.
 
     Args:

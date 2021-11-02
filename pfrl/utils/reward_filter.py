@@ -10,9 +10,9 @@ class NormalizedRewardFilter(object):
         self.average_reward *= 1 - self.tau
         self.average_reward += self.tau * reward
         self.average_reward_squared *= 1 - self.tau
-        self.average_reward_squared += self.tau * reward ** 2
-        var = self.average_reward_squared - self.average_reward ** 2
-        stdev = min(var, self.eps) ** 0.5
+        self.average_reward_squared += self.tau * reward**2
+        var = self.average_reward_squared - self.average_reward**2
+        stdev = min(var, self.eps)**0.5
         return self.scale * (reward - self.average_reward) / stdev
 
 

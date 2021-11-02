@@ -174,9 +174,7 @@ class A3C(agent.AttributeSavingMixin, agent.AsyncAgent):
             )
         else:
             batch_distrib, batch_v = self.model(batch_obs)
-        batch_action = torch.stack(
-            [self.past_action[i] for i in range(self.t_start, self.t)]
-        )
+        batch_action = torch.stack([self.past_action[i] for i in range(self.t_start, self.t)])
         batch_log_prob = batch_distrib.log_prob(batch_action)
         batch_entropy = batch_distrib.entropy()
         rev_returns = []
@@ -189,9 +187,7 @@ class A3C(agent.AttributeSavingMixin, agent.AsyncAgent):
         assert batch_log_prob.shape == (n,)
         assert batch_adv.shape == (n,)
         assert batch_entropy.shape == (n,)
-        pi_loss = torch.sum(
-            -batch_adv * batch_log_prob - self.beta * batch_entropy, dim=0
-        )
+        pi_loss = torch.sum(-batch_adv * batch_log_prob - self.beta * batch_entropy, dim=0)
         assert batch_v.shape == (n, 1)
         assert batch_return.shape == (n,)
         v_loss = F.mse_loss(batch_v, batch_return[..., None], reduction="sum") / 2
@@ -259,12 +255,9 @@ class A3C(agent.AttributeSavingMixin, agent.AsyncAgent):
             action = action.cpu().numpy()[0]
 
         # Update stats
-        self.average_value += (1 - self.average_value_decay) * (
-            float(vout) - self.average_value
-        )
-        self.average_entropy += (1 - self.average_entropy_decay) * (
-            float(pout.entropy()) - self.average_entropy
-        )
+        self.average_value += (1 - self.average_value_decay) * (float(vout) - self.average_value)
+        self.average_entropy += (1 - self.average_entropy_decay) * (float(pout.entropy()) -
+                                                                    self.average_entropy)
 
         return action
 
@@ -272,9 +265,7 @@ class A3C(agent.AttributeSavingMixin, agent.AsyncAgent):
         self.t += 1
         self.past_rewards[self.t - 1] = reward
         if self.process_idx == 0:
-            logger.debug(
-                "t:%s action:%s reward:%s", self.t, self.past_action[self.t - 1], reward
-            )
+            logger.debug("t:%s action:%s reward:%s", self.t, self.past_action[self.t - 1], reward)
         if self.t - self.t_start == self.t_max or done or reset:
             if done:
                 statevar = None

@@ -11,7 +11,6 @@ class ActionValue(object, metaclass=ABCMeta):
 
     Every operation it supports is done in a batch manner.
     """
-
     @abstractproperty
     def greedy_actions(self):
         """Get argmax_a Q(s,a)."""
@@ -48,7 +47,6 @@ class DiscreteActionValue(ActionValue):
         q_values (torch.Tensor):
             Array of Q values whose shape is (batchsize, n_actions)
     """
-
     def __init__(self, q_values, q_values_formatter=lambda x: x):
         assert isinstance(q_values, torch.Tensor)
         self.device = q_values.device
@@ -89,9 +87,7 @@ class DiscreteActionValue(ActionValue):
         return (self.q_values,)
 
     def __getitem__(self, i):
-        return DiscreteActionValue(
-            self.q_values[i], q_values_formatter=self.q_values_formatter
-        )
+        return DiscreteActionValue(self.q_values[i], q_values_formatter=self.q_values_formatter)
 
 
 class DistributionalDiscreteActionValue(ActionValue):
@@ -103,7 +99,6 @@ class DistributionalDiscreteActionValue(ActionValue):
         z_values (ndarray): Values represented by atoms.
             Its shape must be (n_atoms,).
     """
-
     def __init__(self, q_dist, z_values, q_values_formatter=lambda x: x):
         assert isinstance(q_dist, torch.Tensor)
         assert isinstance(z_values, torch.Tensor)
@@ -133,9 +128,7 @@ class DistributionalDiscreteActionValue(ActionValue):
             torch.Tensor: Return distributions. Its shape will be
                 (batch_size, n_atoms).
         """
-        return self.q_dist[
-            torch.arange(self.q_values.shape[0]), self.greedy_actions.detach()
-        ]
+        return self.q_dist[torch.arange(self.q_values.shape[0]), self.greedy_actions.detach()]
 
     def evaluate_actions(self, actions):
         return torch.gather(self.q_values, 1, actions[:, None])[:, 0]
@@ -186,7 +179,6 @@ class QuantileDiscreteActionValue(DiscreteActionValue):
         quantiles (torch.Tensor): (batch_size, n_taus, n_actions)
         q_values_formatter (callable):
     """
-
     def __init__(self, quantiles, q_values_formatter=lambda x: x):
         assert quantiles.ndim == 3
         self.quantiles = quantiles
@@ -207,16 +199,13 @@ class QuantileDiscreteActionValue(DiscreteActionValue):
                 (batch_size, n_taus).
         """
         return self.quantiles[
-            torch.arange(self.quantiles.shape[0], dtype=torch.long), :, actions.long()
-        ]
+            torch.arange(self.quantiles.shape[0], dtype=torch.long), :, actions.long()]
 
     def __repr__(self):
-        return (
-            "QuantileDiscreteActionValue greedy_actions:{} q_values:{}".format(  # NOQA
-                self.greedy_actions.detach().cpu().numpy(),
-                self.q_values_formatter(self.q_values.detach().cpu().numpy()),
-            )
-        )
+        return ("QuantileDiscreteActionValue greedy_actions:{} q_values:{}".format(  # NOQA
+            self.greedy_actions.detach().cpu().numpy(),
+            self.q_values_formatter(self.q_values.detach().cpu().numpy()),
+        ))
 
     @property
     def params(self):
@@ -247,7 +236,6 @@ class QuadraticActionValue(ActionValue):
         min_action (ndarray): minimum action, not batched
         max_action (ndarray): maximum action, not batched
     """
-
     def __init__(self, mu, mat, v, min_action=None, max_action=None):
         self.mu = mu
         self.mat = mat
@@ -281,23 +269,15 @@ class QuadraticActionValue(ActionValue):
     @lazy_property
     def max(self):
         if self.min_action is None and self.max_action is None:
-            return self.v.reshape(
-                self.batch_size,
-            )
+            return self.v.reshape(self.batch_size,)
         else:
             return self.evaluate_actions(self.greedy_actions)
 
     def evaluate_actions(self, actions):
         u_minus_mu = actions - self.mu
-        a = (
-            -0.5
-            * torch.matmul(
-                torch.matmul(u_minus_mu[:, None, :], self.mat), u_minus_mu[:, :, None]
-            )[:, 0, 0]
-        )
-        return a + self.v.reshape(
-            self.batch_size,
-        )
+        a = (-0.5 * torch.matmul(torch.matmul(u_minus_mu[:, None, :], self.mat),
+                                 u_minus_mu[:, :, None])[:, 0, 0])
+        return a + self.v.reshape(self.batch_size,)
 
     def compute_advantage(self, actions):
         return self.evaluate_actions(actions) - self.max
@@ -307,8 +287,7 @@ class QuadraticActionValue(ActionValue):
 
     def __repr__(self):
         return "QuadraticActionValue greedy_actions:{} v:{}".format(
-            self.greedy_actions.detach().cpu().numpy(), self.v.detach().cpu().numpy()
-        )
+            self.greedy_actions.detach().cpu().numpy(), self.v.detach().cpu().numpy())
 
     @property
     def params(self):
@@ -326,7 +305,6 @@ class QuadraticActionValue(ActionValue):
 
 class SingleActionValue(ActionValue):
     """ActionValue that can evaluate only a single action."""
-
     def __init__(self, evaluator, maximizer=None):
         self.evaluator = evaluator
         self.maximizer = maximizer
@@ -353,12 +331,10 @@ class SingleActionValue(ActionValue):
 
     @property
     def params(self):
-        warnings.warn(
-            "SingleActionValue has no learnable parameters until it"
-            " is evaluated on some action. If you want to draw a computation"
-            " graph that outputs SingleActionValue, use the variable returned"
-            " by its method such as evaluate_actions instead."
-        )
+        warnings.warn("SingleActionValue has no learnable parameters until it"
+                      " is evaluated on some action. If you want to draw a computation"
+                      " graph that outputs SingleActionValue, use the variable returned"
+                      " by its method such as evaluate_actions instead.")
         return ()
 
     def __getitem__(self, i):

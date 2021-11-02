@@ -3,6 +3,7 @@
 import torch
 import torch.nn as nn
 
+
 @torch.no_grad()
 def init_xavier_uniform(layer, nonlinearity='relu'):
     """Initializes the layer with xavier_uniform 

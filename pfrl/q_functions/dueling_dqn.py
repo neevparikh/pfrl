@@ -22,20 +22,17 @@ class DuelingDQN(nn.Module, StateQFunction):
 
     See: http://arxiv.org/abs/1511.06581
     """
-
     def __init__(self, n_actions, n_input_channels=4, activation=F.relu, bias=0.1):
         self.n_actions = n_actions
         self.n_input_channels = n_input_channels
         self.activation = activation
 
         super().__init__()
-        self.conv_layers = nn.ModuleList(
-            [
-                nn.Conv2d(n_input_channels, 32, 8, stride=4),
-                nn.Conv2d(32, 64, 4, stride=2),
-                nn.Conv2d(64, 64, 3, stride=1),
-            ]
-        )
+        self.conv_layers = nn.ModuleList([
+            nn.Conv2d(n_input_channels, 32, 8, stride=4),
+            nn.Conv2d(32, 64, 4, stride=2),
+            nn.Conv2d(64, 64, 3, stride=1),
+        ])
 
         self.a_stream = MLP(3136, n_actions, [512])
         self.v_stream = MLP(3136, 1, [512])
@@ -66,7 +63,6 @@ class DuelingDQN(nn.Module, StateQFunction):
 
 class DistributionalDuelingDQN(nn.Module, StateQFunction):
     """Distributional dueling fully-connected Q-function with discrete actions."""
-
     def __init__(
         self,
         n_actions,
@@ -88,13 +84,11 @@ class DistributionalDuelingDQN(nn.Module, StateQFunction):
         super().__init__()
         self.z_values = torch.linspace(v_min, v_max, n_atoms, dtype=torch.float32)
 
-        self.conv_layers = nn.ModuleList(
-            [
-                nn.Conv2d(n_input_channels, 32, 8, stride=4),
-                nn.Conv2d(32, 64, 4, stride=2),
-                nn.Conv2d(64, 64, 3, stride=1),
-            ]
-        )
+        self.conv_layers = nn.ModuleList([
+            nn.Conv2d(n_input_channels, 32, 8, stride=4),
+            nn.Conv2d(32, 64, 4, stride=2),
+            nn.Conv2d(64, 64, 3, stride=1),
+        ])
 
         self.main_stream = nn.Linear(3136, 1024)
         self.a_stream = nn.Linear(512, n_actions * n_atoms)

@@ -37,11 +37,9 @@ def _add_advantage_and_value_target_to_episode(episode, gamma, lambd):
     """Add advantage and value target values to an episode."""
     adv = 0.0
     for transition in reversed(episode):
-        td_err = (
-            transition["reward"]
-            + (gamma * transition["nonterminal"] * transition["next_v_pred"])
-            - transition["v_pred"]
-        )
+        td_err = (transition["reward"] +
+                  (gamma * transition["nonterminal"] * transition["next_v_pred"]) -
+                  transition["v_pred"])
         adv = td_err + gamma * lambd * adv
         transition["adv"] = adv
         transition["v_teacher"] = adv + transition["v_pred"]
@@ -69,9 +67,7 @@ def _add_log_prob_and_value_to_episodes_recurrent(
     seqs_next_states = []
     for ep in episodes:
         states = batch_states([transition["state"] for transition in ep], device, phi)
-        next_states = batch_states(
-            [transition["next_state"] for transition in ep], device, phi
-        )
+        next_states = batch_states([transition["next_state"] for transition in ep], device, phi)
         if obs_normalizer:
             states = obs_normalizer(states, update=False)
             next_states = obs_normalizer(next_states, update=False)
@@ -83,17 +79,13 @@ def _add_log_prob_and_value_to_episodes_recurrent(
     # Predict values using a recurrent model
     with torch.no_grad(), pfrl.utils.evaluating(model):
         rs = concatenate_recurrent_states([ep[0]["recurrent_state"] for ep in episodes])
-        next_rs = concatenate_recurrent_states(
-            [ep[0]["next_recurrent_state"] for ep in episodes]
-        )
+        next_rs = concatenate_recurrent_states([ep[0]["next_recurrent_state"] for ep in episodes])
         assert (rs is None) or (next_rs is None) or (len(rs) == len(next_rs))
 
         (flat_distribs, flat_vs), _ = pack_and_forward(model, seqs_states, rs)
         (_, flat_next_vs), _ = pack_and_forward(model, seqs_next_states, next_rs)
 
-        flat_actions = torch.tensor(
-            [b["action"] for b in flat_transitions], device=device
-        )
+        flat_actions = torch.tensor([b["action"] for b in flat_transitions], device=device)
         flat_log_probs = flat_distribs.log_prob(flat_actions).cpu().numpy()
         flat_vs = flat_vs.cpu().numpy()
         flat_next_vs = flat_next_vs.cpu().numpy()
@@ -135,9 +127,7 @@ def _add_log_prob_and_value_to_episodes(
         vs_pred = vs_pred.cpu().numpy().ravel()
         next_vs_pred = next_vs_pred.cpu().numpy().ravel()
 
-    for transition, log_prob, v_pred, next_v_pred in zip(
-        dataset, log_probs, vs_pred, next_vs_pred
-    ):
+    for transition, log_prob, v_pred, next_v_pred in zip(dataset, log_probs, vs_pred, next_vs_pred):
         transition["log_prob"] = log_prob
         transition["v_pred"] = v_pred
         transition["next_v_pred"] = next_v_pred
@@ -226,9 +216,7 @@ def _make_dataset_recurrent(
     return dataset
 
 
-def _make_dataset(
-    episodes, model, phi, batch_states, obs_normalizer, gamma, lambd, device
-):
+def _make_dataset(episodes, model, phi, batch_states, obs_normalizer, gamma, lambd, device):
     """Make a list of transitions with necessary information."""
 
     _add_log_prob_and_value_to_episodes(
@@ -406,15 +394,9 @@ class PPO(agent.AttributeSavingMixin, agent.BatchAgent):
         self.batch_last_action = [None] * num_envs
 
     def _update_if_dataset_is_ready(self):
-        dataset_size = (
-            sum(len(episode) for episode in self.memory)
-            + len(self.last_episode)
-            + (
-                0
-                if self.batch_last_episode is None
-                else sum(len(episode) for episode in self.batch_last_episode)
-            )
-        )
+        dataset_size = (sum(len(episode) for episode in self.memory) + len(self.last_episode) +
+                        (0 if self.batch_last_episode is None else sum(
+                            len(episode) for episode in self.batch_last_episode)))
         if dataset_size >= self.update_interval:
             self._flush_last_episode()
             if self.recurrent:
@@ -444,8 +426,7 @@ class PPO(agent.AttributeSavingMixin, agent.BatchAgent):
                 assert len(dataset) == dataset_size
                 self._update(dataset)
             self.explained_variance = _compute_explained_variance(
-                list(itertools.chain.from_iterable(self.memory))
-            )
+                list(itertools.chain.from_iterable(self.memory)))
             self.memory = []
 
     def _flush_last_episode(self):
@@ -478,20 +459,16 @@ class PPO(agent.AttributeSavingMixin, agent.BatchAgent):
             all_advs = torch.tensor([b["adv"] for b in dataset], device=device)
             std_advs, mean_advs = torch.std_mean(all_advs, unbiased=False)
 
-        for batch in _yield_minibatches(
-            dataset, minibatch_size=self.minibatch_size, num_epochs=self.epochs
-        ):
-            states = self.batch_states(
-                [b["state"] for b in batch], self.device, self.phi
-            )
+        for batch in _yield_minibatches(dataset,
+                                        minibatch_size=self.minibatch_size,
+                                        num_epochs=self.epochs):
+            states = self.batch_states([b["state"] for b in batch], self.device, self.phi)
             if self.obs_normalizer:
                 states = self.obs_normalizer(states, update=False)
             actions = torch.tensor([b["action"] for b in batch], device=device)
             distribs, vs_pred = self.model(states)
 
-            advs = torch.tensor(
-                [b["adv"] for b in batch], dtype=torch.float32, device=device
-            )
+            advs = torch.tensor([b["adv"] for b in batch], dtype=torch.float32, device=device)
             if self.standardize_advantages:
                 advs = (advs - mean_advs) / (std_advs + 1e-8)
 
@@ -526,9 +503,7 @@ class PPO(agent.AttributeSavingMixin, agent.BatchAgent):
             )
             loss.backward()
             if self.max_grad_norm is not None:
-                torch.nn.utils.clip_grad_norm_(
-                    self.model.parameters(), self.max_grad_norm
-                )
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.max_grad_norm)
             self.optimizer.step()
             self.n_updates += 1
 
@@ -583,9 +558,7 @@ class PPO(agent.AttributeSavingMixin, agent.BatchAgent):
         )
 
         with torch.no_grad(), pfrl.utils.evaluating(self.model):
-            rs = concatenate_recurrent_states(
-                [ep[0]["recurrent_state"] for ep in episodes]
-            )
+            rs = concatenate_recurrent_states([ep[0]["recurrent_state"] for ep in episodes])
 
         (flat_distribs, flat_vs_pred), _ = pack_and_forward(self.model, seqs_states, rs)
         flat_log_probs = flat_distribs.log_prob(flat_actions)
@@ -629,13 +602,10 @@ class PPO(agent.AttributeSavingMixin, agent.BatchAgent):
         for _ in range(self.epochs):
             random.shuffle(dataset)
             for minibatch in _yield_subset_of_sequences_with_fixed_number_of_items(
-                dataset, self.minibatch_size
-            ):
+                    dataset, self.minibatch_size):
                 self._update_once_recurrent(minibatch, mean_advs, std_advs)
 
-    def _lossfun(
-        self, entropy, vs_pred, log_probs, vs_pred_old, log_probs_old, advs, vs_teacher
-    ):
+    def _lossfun(self, entropy, vs_pred, log_probs, vs_pred_old, log_probs_old, advs, vs_teacher):
 
         prob_ratio = torch.exp(log_probs - log_probs_old)
 
@@ -643,8 +613,7 @@ class PPO(agent.AttributeSavingMixin, agent.BatchAgent):
             torch.min(
                 prob_ratio * advs,
                 torch.clamp(prob_ratio, 1 - self.clip_eps, 1 + self.clip_eps) * advs,
-            ),
-        )
+            ),)
 
         if self.clip_eps_vf is None:
             loss_value_func = F.mse_loss(vs_pred, vs_teacher)
@@ -658,18 +627,14 @@ class PPO(agent.AttributeSavingMixin, agent.BatchAgent):
                 torch.max(
                     F.mse_loss(vs_pred, vs_teacher, reduction="none"),
                     F.mse_loss(clipped_vs_pred, vs_teacher, reduction="none"),
-                )
-            )
+                ))
         loss_entropy = -torch.mean(entropy)
 
         self.value_loss_record.append(float(loss_value_func))
         self.policy_loss_record.append(float(loss_policy))
 
-        loss = (
-            loss_policy
-            + self.value_func_coef * loss_value_func
-            + self.entropy_coef * loss_entropy
-        )
+        loss = (loss_policy + self.value_func_coef * loss_value_func +
+                self.entropy_coef * loss_entropy)
 
         return loss
 
@@ -728,9 +693,7 @@ class PPO(agent.AttributeSavingMixin, agent.BatchAgent):
                 (
                     (action_distrib, batch_value),
                     self.train_recurrent_states,
-                ) = one_step_forward(
-                    self.model, b_state, self.train_prev_recurrent_states
-                )
+                ) = one_step_forward(self.model, b_state, self.train_prev_recurrent_states)
             else:
                 action_distrib, batch_value = self.model(b_state)
             batch_action = action_distrib.sample().cpu().numpy()
@@ -747,28 +710,24 @@ class PPO(agent.AttributeSavingMixin, agent.BatchAgent):
         if self.recurrent:
             # Reset recurrent states when episodes end
             indices_that_ended = [
-                i
-                for i, (done, reset) in enumerate(zip(batch_done, batch_reset))
-                if done or reset
+                i for i, (done, reset) in enumerate(zip(batch_done, batch_reset)) if done or reset
             ]
             if indices_that_ended:
-                self.test_recurrent_states = mask_recurrent_state_at(
-                    self.test_recurrent_states, indices_that_ended
-                )
+                self.test_recurrent_states = mask_recurrent_state_at(self.test_recurrent_states,
+                                                                     indices_that_ended)
 
     def _batch_observe_train(self, batch_obs, batch_reward, batch_done, batch_reset):
         assert self.training
 
         for i, (state, action, reward, next_state, done, reset) in enumerate(
-            zip(
-                self.batch_last_state,
-                self.batch_last_action,
-                batch_reward,
-                batch_obs,
-                batch_done,
-                batch_reset,
-            )
-        ):
+                zip(
+                    self.batch_last_state,
+                    self.batch_last_action,
+                    batch_reward,
+                    batch_obs,
+                    batch_done,
+                    batch_reset,
+                )):
             if state is not None:
                 assert action is not None
                 transition = {
@@ -780,11 +739,9 @@ class PPO(agent.AttributeSavingMixin, agent.BatchAgent):
                 }
                 if self.recurrent:
                     transition["recurrent_state"] = get_recurrent_state_at(
-                        self.train_prev_recurrent_states, i, detach=True
-                    )
+                        self.train_prev_recurrent_states, i, detach=True)
                     transition["next_recurrent_state"] = get_recurrent_state_at(
-                        self.train_recurrent_states, i, detach=True
-                    )
+                        self.train_recurrent_states, i, detach=True)
                 self.batch_last_episode[i].append(transition)
             if done or reset:
                 assert self.batch_last_episode[i]
@@ -798,14 +755,11 @@ class PPO(agent.AttributeSavingMixin, agent.BatchAgent):
         if self.recurrent:
             # Reset recurrent states when episodes end
             indices_that_ended = [
-                i
-                for i, (done, reset) in enumerate(zip(batch_done, batch_reset))
-                if done or reset
+                i for i, (done, reset) in enumerate(zip(batch_done, batch_reset)) if done or reset
             ]
             if indices_that_ended:
-                self.train_recurrent_states = mask_recurrent_state_at(
-                    self.train_recurrent_states, indices_that_ended
-                )
+                self.train_recurrent_states = mask_recurrent_state_at(self.train_recurrent_states,
+                                                                      indices_that_ended)
 
         self._update_if_dataset_is_ready()
 
