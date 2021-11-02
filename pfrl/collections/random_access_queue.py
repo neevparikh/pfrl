@@ -9,7 +9,6 @@ class RandomAccessQueue(object):
     Operations getitem, setitem, append, popleft, and len
     are amortized O(1)-time, if this data structure is used ephemerally.
     """
-
     def __init__(self, *args, **kwargs):
         self.maxlen = kwargs.pop("maxlen", None)
         assert self.maxlen is None or self.maxlen >= 0

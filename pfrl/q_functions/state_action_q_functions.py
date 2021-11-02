@@ -15,7 +15,6 @@ class SingleModelStateActionQFunction(nn.Module, StateActionQFunction):
         model (nn.Module):
             Module that is callable and outputs action values.
     """
-
     def __init__(self, model):
         super().__init__(model=model)
 
@@ -38,7 +37,6 @@ class FCSAQFunction(MLP, StateActionQFunction):
             supported. It is not used if n_hidden_layers is zero.
         last_wscale (float): Scale of weight initialization of the last layer.
     """
-
     def __init__(
         self,
         n_dim_obs,
@@ -79,7 +77,6 @@ class FCLSTMSAQFunction(nn.Module, StateActionQFunction):
             supported.
         last_wscale (float): Scale of weight initialization of the last layer.
     """
-
     def __init__(
         self,
         n_dim_obs,
@@ -101,9 +98,9 @@ class FCLSTMSAQFunction(nn.Module, StateActionQFunction):
             [self.n_hidden_channels] * self.n_hidden_layers,
             nonlinearity=nonlinearity,
         )
-        self.lstm = nn.LSTM(
-            num_layers=1, input_size=n_hidden_channels, hidden_size=n_hidden_channels
-        )
+        self.lstm = nn.LSTM(num_layers=1,
+                            input_size=n_hidden_channels,
+                            hidden_size=n_hidden_channels)
         self.out = nn.Linear(n_hidden_channels, 1)
         for (n, p) in self.lstm.named_parameters():
             if "weight" in n:
@@ -137,7 +134,6 @@ class FCBNSAQFunction(MLPBN, StateActionQFunction):
             supported. It is not used if n_hidden_layers is zero.
         last_wscale (float): Scale of weight initialization of the last layer.
     """
-
     def __init__(
         self,
         n_dim_obs,
@@ -187,7 +183,6 @@ class FCBNLateActionSAQFunction(nn.Module, StateActionQFunction):
             supported.
         last_wscale (float): Scale of weight initialization of the last layer.
     """
-
     def __init__(
         self,
         n_dim_obs,
@@ -250,7 +245,6 @@ class FCLateActionSAQFunction(nn.Module, StateActionQFunction):
             supported.
         last_wscale (float): Scale of weight initialization of the last layer.
     """
-
     def __init__(
         self,
         n_dim_obs,
@@ -269,9 +263,7 @@ class FCLateActionSAQFunction(nn.Module, StateActionQFunction):
         super().__init__()
         # No need to pass nonlinearity to obs_mlp because it has no
         # hidden layers
-        self.obs_mlp = MLP(
-            in_size=n_dim_obs, out_size=n_hidden_channels, hidden_sizes=[]
-        )
+        self.obs_mlp = MLP(in_size=n_dim_obs, out_size=n_hidden_channels, hidden_sizes=[])
         self.mlp = MLP(
             in_size=n_hidden_channels + n_dim_action,
             out_size=1,

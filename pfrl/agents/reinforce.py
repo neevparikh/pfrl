@@ -123,8 +123,7 @@ class REINFORCE(agent.AttributeSavingMixin, agent.Agent):
 
         # Update stats
         self.average_entropy += (1 - self.average_entropy_decay) * (
-            float(action_distrib.entropy()) - self.average_entropy
-        )
+            float(action_distrib.entropy()) - self.average_entropy)
 
         return action
 
@@ -134,10 +133,8 @@ class REINFORCE(agent.AttributeSavingMixin, agent.Agent):
 
         if done or reset:
             if not done:
-                warnings.warn(
-                    "Since REINFORCE supports episodic environments only, "
-                    "reset=True with done=False will throw away the last episode."
-                )
+                warnings.warn("Since REINFORCE supports episodic environments only, "
+                              "reset=True with done=False will throw away the last episode.")
                 self.reward_sequences[-1] = []
                 self.log_prob_sequences[-1] = []
                 self.entropy_sequences[-1] = []

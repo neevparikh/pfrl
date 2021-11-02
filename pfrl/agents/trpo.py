@@ -59,12 +59,8 @@ def _replace_params_data(params, new_params_data):
 def _hessian_vector_product(flat_grads, params, vec):
     """Compute hessian vector product efficiently by backprop."""
     vec = vec.detach()
-    grads = torch.autograd.grad(
-        [torch.sum(flat_grads * vec)], params, retain_graph=True
-    )
-    assert all(
-        grad is not None for grad in grads
-    ), "The Hessian-vector product contains None."
+    grads = torch.autograd.grad([torch.sum(flat_grads * vec)], params, retain_graph=True)
+    assert all(grad is not None for grad in grads), "The Hessian-vector product contains None."
     return _flatten_and_concat_variables(grads)
 
 
@@ -74,17 +70,13 @@ def _mean_or_nan(xs):
 
 
 def _collect_first_recurrent_states_of_policy(episodes):
-    return [
-        (ep[0]["recurrent_state"][0] if ep[0]["recurrent_state"] is not None else None)
-        for ep in episodes
-    ]
+    return [(ep[0]["recurrent_state"][0] if ep[0]["recurrent_state"] is not None else None)
+            for ep in episodes]
 
 
 def _collect_first_recurrent_states_of_vf(episodes):
-    return [
-        (ep[0]["recurrent_state"][1] if ep[0]["recurrent_state"] is not None else None)
-        for ep in episodes
-    ]
+    return [(ep[0]["recurrent_state"][1] if ep[0]["recurrent_state"] is not None else None)
+            for ep in episodes]
 
 
 class TRPO(agent.AttributeSavingMixin, agent.BatchAgent):
@@ -164,34 +156,34 @@ class TRPO(agent.AttributeSavingMixin, agent.BatchAgent):
     saved_attributes = ("policy", "vf", "vf_optimizer", "obs_normalizer")
 
     def __init__(
-        self,
-        policy,
-        vf,
-        vf_optimizer,
-        obs_normalizer=None,
-        gpu=None,
-        gamma=0.99,
-        lambd=0.95,
-        phi=lambda x: x,
-        entropy_coef=0.01,
-        update_interval=2048,
-        max_kl=0.01,
-        vf_epochs=3,
-        vf_batch_size=64,
-        standardize_advantages=True,
-        batch_states=batch_states,
-        recurrent=False,
-        max_recurrent_sequence_len=None,
-        line_search_max_backtrack=10,
-        conjugate_gradient_max_iter=10,
-        conjugate_gradient_damping=1e-2,
-        act_deterministically=False,
-        max_grad_norm=None,
-        value_stats_window=1000,
-        entropy_stats_window=1000,
-        kl_stats_window=100,
-        policy_step_size_stats_window=100,
-        logger=getLogger(__name__),
+            self,
+            policy,
+            vf,
+            vf_optimizer,
+            obs_normalizer=None,
+            gpu=None,
+            gamma=0.99,
+            lambd=0.95,
+            phi=lambda x: x,
+            entropy_coef=0.01,
+            update_interval=2048,
+            max_kl=0.01,
+            vf_epochs=3,
+            vf_batch_size=64,
+            standardize_advantages=True,
+            batch_states=batch_states,
+            recurrent=False,
+            max_recurrent_sequence_len=None,
+            line_search_max_backtrack=10,
+            conjugate_gradient_max_iter=10,
+            conjugate_gradient_damping=1e-2,
+            act_deterministically=False,
+            max_grad_norm=None,
+            value_stats_window=1000,
+            entropy_stats_window=1000,
+            kl_stats_window=100,
+            policy_step_size_stats_window=100,
+            logger=getLogger(__name__),
     ):
 
         self.policy = policy
@@ -235,9 +227,7 @@ class TRPO(agent.AttributeSavingMixin, agent.BatchAgent):
         self.value_record = collections.deque(maxlen=value_stats_window)
         self.entropy_record = collections.deque(maxlen=entropy_stats_window)
         self.kl_record = collections.deque(maxlen=kl_stats_window)
-        self.policy_step_size_record = collections.deque(
-            maxlen=policy_step_size_stats_window
-        )
+        self.policy_step_size_record = collections.deque(maxlen=policy_step_size_stats_window)
         self.explained_variance = np.nan
 
         self.last_state = None
@@ -264,15 +254,9 @@ class TRPO(agent.AttributeSavingMixin, agent.BatchAgent):
         self.batch_last_action = [None] * num_envs
 
     def _update_if_dataset_is_ready(self):
-        dataset_size = (
-            sum(len(episode) for episode in self.memory)
-            + len(self.last_episode)
-            + (
-                0
-                if self.batch_last_episode is None
-                else sum(len(episode) for episode in self.batch_last_episode)
-            )
-        )
+        dataset_size = (sum(len(episode) for episode in self.memory) + len(self.last_episode) +
+                        (0 if self.batch_last_episode is None else sum(
+                            len(episode) for episode in self.batch_last_episode)))
         if dataset_size >= self.update_interval:
             self._flush_last_episode()
             if self.recurrent:
@@ -302,8 +286,7 @@ class TRPO(agent.AttributeSavingMixin, agent.BatchAgent):
                 assert len(dataset) == dataset_size
                 self._update(dataset)
             self.explained_variance = _compute_explained_variance(
-                flatten_sequences_time_first(self.memory)
-            )
+                flatten_sequences_time_first(self.memory))
             self.memory = []
 
     def _flush_last_episode(self):
@@ -338,11 +321,8 @@ class TRPO(agent.AttributeSavingMixin, agent.BatchAgent):
 
         for epoch in range(self.vf_epochs):
             random.shuffle(dataset)
-            for (
-                minibatch
-            ) in _yield_subset_of_sequences_with_fixed_number_of_items(  # NOQA
-                dataset, self.vf_batch_size
-            ):
+            for (minibatch) in _yield_subset_of_sequences_with_fixed_number_of_items(  # NOQA
+                    dataset, self.vf_batch_size):
                 self._update_vf_once_recurrent(minibatch)
 
     def _update_vf_once_recurrent(self, episodes):
@@ -355,9 +335,9 @@ class TRPO(agent.AttributeSavingMixin, agent.BatchAgent):
         # Prepare data for a recurrent model
         seqs_states = []
         for ep in episodes:
-            states = self.batch_states(
-                [transition["state"] for transition in ep], self.device, self.phi
-            )
+            states = self.batch_states([transition["state"] for transition in ep],
+                                       self.device,
+                                       self.phi)
             if self.obs_normalizer:
                 states = self.obs_normalizer(states, update=False)
             seqs_states.append(states)
@@ -369,9 +349,7 @@ class TRPO(agent.AttributeSavingMixin, agent.BatchAgent):
         )
 
         with torch.no_grad():
-            vf_rs = concatenate_recurrent_states(
-                _collect_first_recurrent_states_of_vf(episodes)
-            )
+            vf_rs = concatenate_recurrent_states(_collect_first_recurrent_states_of_vf(episodes))
 
         flat_vs_pred, _ = pack_and_forward(self.vf, seqs_states, vf_rs)
 
@@ -396,9 +374,9 @@ class TRPO(agent.AttributeSavingMixin, agent.BatchAgent):
         assert "state" in dataset[0]
         assert "v_teacher" in dataset[0]
 
-        for batch in _yield_minibatches(
-            dataset, minibatch_size=self.vf_batch_size, num_epochs=self.vf_epochs
-        ):
+        for batch in _yield_minibatches(dataset,
+                                        minibatch_size=self.vf_batch_size,
+                                        num_epochs=self.vf_epochs):
             states = batch_states([b["state"] for b in batch], self.device, self.phi)
             if self.obs_normalizer:
                 states = self.obs_normalizer(states, update=False)
@@ -437,9 +415,7 @@ class TRPO(agent.AttributeSavingMixin, agent.BatchAgent):
         if self.obs_normalizer:
             states = self.obs_normalizer(states, update=False)
         actions = torch.as_tensor([b["action"] for b in dataset], device=self.device)
-        advs = torch.as_tensor(
-            [b["adv"] for b in dataset], device=self.device, dtype=torch.float
-        )
+        advs = torch.as_tensor([b["adv"] for b in dataset], device=self.device, dtype=torch.float)
         if self.standardize_advantages:
             std_advs, mean_advs = torch.std_mean(advs, unbiased=False)
             advs = (advs - mean_advs) / (std_advs + 1e-8)
@@ -518,8 +494,7 @@ class TRPO(agent.AttributeSavingMixin, agent.BatchAgent):
 
         with torch.no_grad():
             policy_rs = concatenate_recurrent_states(
-                _collect_first_recurrent_states_of_policy(dataset)
-            )
+                _collect_first_recurrent_states_of_policy(dataset))
 
         flat_distribs, _ = pack_and_forward(self.policy, seqs_states, policy_rs)
 
@@ -539,9 +514,7 @@ class TRPO(agent.AttributeSavingMixin, agent.BatchAgent):
         # Distribution to compute KL div against
         with torch.no_grad():
             # torch.distributions.Distribution cannot be deepcopied
-            action_distrib_old, _ = pack_and_forward(
-                self.policy, seqs_states, policy_rs
-            )
+            action_distrib_old, _ = pack_and_forward(self.policy, seqs_states, policy_rs)
 
         full_step = self._compute_kl_constrained_step(
             action_distrib=flat_distribs,
@@ -560,9 +533,7 @@ class TRPO(agent.AttributeSavingMixin, agent.BatchAgent):
     def _compute_kl_constrained_step(self, action_distrib, action_distrib_old, gain):
         """Compute a step of policy parameters with a KL constraint."""
         policy_params = list(self.policy.parameters())
-        kl = torch.mean(
-            torch.distributions.kl_divergence(action_distrib_old, action_distrib)
-        )
+        kl = torch.mean(torch.distributions.kl_divergence(action_distrib_old, action_distrib))
 
         kl_grads = torch.autograd.grad([kl], policy_params, create_graph=True)
         assert all(
@@ -597,7 +568,7 @@ class TRPO(agent.AttributeSavingMixin, agent.BatchAgent):
         # for alpha to get the step size that tightly satisfies the constraint.
 
         dId = float(step_direction.dot(fisher_vector_product_func(step_direction)))
-        scale = (2.0 * self.max_kl / (dId + 1e-8)) ** 0.5
+        scale = (2.0 * self.max_kl / (dId + 1e-8))**0.5
         return scale * step_direction
 
     def _line_search(self, full_step, dataset, advs, action_distrib_old, gain):
@@ -611,34 +582,31 @@ class TRPO(agent.AttributeSavingMixin, agent.BatchAgent):
         if self.recurrent:
             seqs_states = []
             for ep in dataset:
-                states = self.batch_states(
-                    [transition["state"] for transition in ep], self.device, self.phi
-                )
+                states = self.batch_states([transition["state"] for transition in ep],
+                                           self.device,
+                                           self.phi)
                 if self.obs_normalizer:
                     states = self.obs_normalizer(states, update=False)
                 seqs_states.append(states)
             with torch.no_grad(), pfrl.utils.evaluating(self.model):
                 policy_rs = concatenate_recurrent_states(
-                    _collect_first_recurrent_states_of_policy(dataset)
-                )
+                    _collect_first_recurrent_states_of_policy(dataset))
 
             def evaluate_current_policy():
                 distrib, _ = pack_and_forward(self.policy, seqs_states, policy_rs)
                 return distrib
 
         else:
-            states = self.batch_states(
-                [transition["state"] for transition in dataset], self.device, self.phi
-            )
+            states = self.batch_states([transition["state"] for transition in dataset],
+                                       self.device,
+                                       self.phi)
             if self.obs_normalizer:
                 states = self.obs_normalizer(states, update=False)
 
             def evaluate_current_policy():
                 return self.policy(states)
 
-        flat_transitions = (
-            flatten_sequences_time_first(dataset) if self.recurrent else dataset
-        )
+        flat_transitions = (flatten_sequences_time_first(dataset) if self.recurrent else dataset)
         actions = torch.tensor(
             [transition["action"] for transition in flat_transitions],
             device=self.device,
@@ -667,10 +635,7 @@ class TRPO(agent.AttributeSavingMixin, agent.BatchAgent):
                     advs=advs,
                 )
                 new_kl = torch.mean(
-                    torch.distributions.kl_divergence(
-                        action_distrib_old, new_action_distrib
-                    )
-                )
+                    torch.distributions.kl_divergence(action_distrib_old, new_action_distrib))
 
             improve = float(new_gain) - float(gain)
             self.logger.info("Surrogate objective improve: %s", improve)
@@ -689,16 +654,14 @@ class TRPO(agent.AttributeSavingMixin, agent.BatchAgent):
                 break
             step_size *= 0.5
         else:
-            self.logger.info(
-                "Line search coundn't find a good step size. The policy was not"
-                " updated."
-            )
+            self.logger.info("Line search coundn't find a good step size. The policy was not"
+                             " updated.")
             self.policy_step_size_record.append(0.0)
             _replace_params_data(
                 policy_params,
-                _split_and_reshape_to_ndarrays(
-                    flat_params, sizes=policy_params_sizes, shapes=policy_params_shapes
-                ),
+                _split_and_reshape_to_ndarrays(flat_params,
+                                               sizes=policy_params_sizes,
+                                               shapes=policy_params_shapes),
             )
 
     def batch_act(self, batch_obs):
@@ -756,9 +719,7 @@ class TRPO(agent.AttributeSavingMixin, agent.BatchAgent):
                 (
                     (action_distrib, batch_value),
                     self.train_recurrent_states,
-                ) = one_step_forward(
-                    self.model, b_state, self.train_prev_recurrent_states
-                )
+                ) = one_step_forward(self.model, b_state, self.train_prev_recurrent_states)
             else:
                 action_distrib, batch_value = self.model(b_state)
             batch_action = action_distrib.sample().cpu().numpy()
@@ -775,28 +736,24 @@ class TRPO(agent.AttributeSavingMixin, agent.BatchAgent):
         if self.recurrent:
             # Reset recurrent states when episodes end
             indices_that_ended = [
-                i
-                for i, (done, reset) in enumerate(zip(batch_done, batch_reset))
-                if done or reset
+                i for i, (done, reset) in enumerate(zip(batch_done, batch_reset)) if done or reset
             ]
             if indices_that_ended:
-                self.test_recurrent_states = mask_recurrent_state_at(
-                    self.test_recurrent_states, indices_that_ended
-                )
+                self.test_recurrent_states = mask_recurrent_state_at(self.test_recurrent_states,
+                                                                     indices_that_ended)
 
     def _batch_observe_train(self, batch_obs, batch_reward, batch_done, batch_reset):
         assert self.training
 
         for i, (state, action, reward, next_state, done, reset) in enumerate(
-            zip(  # NOQA
-                self.batch_last_state,
-                self.batch_last_action,
-                batch_reward,
-                batch_obs,
-                batch_done,
-                batch_reset,
-            )
-        ):
+                zip(  # NOQA
+                    self.batch_last_state,
+                    self.batch_last_action,
+                    batch_reward,
+                    batch_obs,
+                    batch_done,
+                    batch_reset,
+                )):
             if state is not None:
                 assert action is not None
                 transition = {
@@ -808,11 +765,9 @@ class TRPO(agent.AttributeSavingMixin, agent.BatchAgent):
                 }
                 if self.recurrent:
                     transition["recurrent_state"] = get_recurrent_state_at(
-                        self.train_prev_recurrent_states, i, detach=True
-                    )
+                        self.train_prev_recurrent_states, i, detach=True)
                     transition["next_recurrent_state"] = get_recurrent_state_at(
-                        self.train_recurrent_states, i, detach=True
-                    )
+                        self.train_recurrent_states, i, detach=True)
                 self.batch_last_episode[i].append(transition)
             if done or reset:
                 assert self.batch_last_episode[i]
@@ -826,14 +781,11 @@ class TRPO(agent.AttributeSavingMixin, agent.BatchAgent):
         if self.recurrent:
             # Reset recurrent states when episodes end
             indices_that_ended = [
-                i
-                for i, (done, reset) in enumerate(zip(batch_done, batch_reset))
-                if done or reset
+                i for i, (done, reset) in enumerate(zip(batch_done, batch_reset)) if done or reset
             ]
             if indices_that_ended:
-                self.train_recurrent_states = mask_recurrent_state_at(
-                    self.train_recurrent_states, indices_that_ended
-                )
+                self.train_recurrent_states = mask_recurrent_state_at(self.train_recurrent_states,
+                                                                      indices_that_ended)
 
         self._update_if_dataset_is_ready()
 

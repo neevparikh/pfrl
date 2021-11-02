@@ -30,14 +30,12 @@ def run_async(n_process, run_func):
         if p.exitcode > 0:
             warnings.warn(
                 "Process #{} (pid={}) exited with nonzero status {}".format(
-                    process_idx, p.pid, p.exitcode
-                ),
+                    process_idx, p.pid, p.exitcode),
                 category=AbnormalExitWarning,
             )
         elif p.exitcode < 0:
             warnings.warn(
                 "Process #{} (pid={}) was terminated by signal {}".format(
-                    process_idx, p.pid, -p.exitcode
-                ),
+                    process_idx, p.pid, -p.exitcode),
                 category=AbnormalExitWarning,
             )

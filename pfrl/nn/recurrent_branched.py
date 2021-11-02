@@ -12,7 +12,6 @@ class RecurrentBranched(Recurrent, nn.ModuleList):
     Args:
         *modules: Child modules. Each module should be recurrent and callable.
     """
-
     def __init__(self, *modules):
         super().__init__(modules)
 
@@ -20,7 +19,5 @@ class RecurrentBranched(Recurrent, nn.ModuleList):
         if recurrent_state is None:
             n = len(self)
             recurrent_state = [None] * n
-        child_ys, rs = tuple(
-            zip(*[link(sequences, rs) for link, rs in zip(self, recurrent_state)])
-        )
+        child_ys, rs = tuple(zip(*[link(sequences, rs) for link, rs in zip(self, recurrent_state)]))
         return child_ys, rs

@@ -17,7 +17,6 @@ class AdditiveGaussian(explorer.Explorer):
             space used to clip an action after adding a noise. If set to None,
             clipping is not performed on upper edge.
     """
-
     def __init__(self, scale, low=None, high=None):
         self.scale = scale
         self.low = low
@@ -32,6 +31,4 @@ class AdditiveGaussian(explorer.Explorer):
             return a + noise
 
     def __repr__(self):
-        return "AdditiveGaussian(scale={}, low={}, high={})".format(
-            self.scale, self.low, self.high
-        )
+        return "AdditiveGaussian(scale={}, low={}, high={})".format(self.scale, self.low, self.high)

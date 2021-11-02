@@ -41,19 +41,15 @@ def _apply_categorical_projection(y, y_probs, z):
     assert u.shape == (batch_size, n_atoms)
 
     z_probs = torch.zeros((batch_size, n_atoms), dtype=torch.float32, device=y.device)
-    offset = torch.arange(
-        0, batch_size * n_atoms, n_atoms, dtype=torch.int32, device=y.device
-    )[..., None]
+    offset = torch.arange(0, batch_size * n_atoms, n_atoms, dtype=torch.int32,
+                          device=y.device)[..., None]
     # Accumulate m_l
     # Note that u - bj in the original paper is replaced with 1 - (bj - l) to
     # deal with the case when bj is an integer, i.e., l = u = bj
-    z_probs.view(-1).scatter_add_(
-        0, (l.long() + offset).view(-1), (y_probs * (1 - (bj - l))).view(-1)
-    )
+    z_probs.view(-1).scatter_add_(0, (l.long() + offset).view(-1),
+                                  (y_probs * (1 - (bj - l))).view(-1))
     # Accumulate m_u
-    z_probs.view(-1).scatter_add_(
-        0, (u.long() + offset).view(-1), (y_probs * (bj - l)).view(-1)
-    )
+    z_probs.view(-1).scatter_add_(0, (u.long() + offset).view(-1), (y_probs * (bj - l)).view(-1))
     return z_probs
 
 
@@ -76,9 +72,7 @@ def compute_value_loss(eltwise_loss, batch_accumulator="mean"):
     return loss
 
 
-def compute_weighted_value_loss(
-    eltwise_loss, batch_size, weights, batch_accumulator="mean"
-):
+def compute_weighted_value_loss(eltwise_loss, batch_size, weights, batch_accumulator="mean"):
     """Compute a loss for value prediction problem.
 
     Args:
@@ -110,7 +104,6 @@ class CategoricalDQN(dqn.DQN):
     Arguments are the same as those of DQN except q_function must return
     DistributionalDiscreteActionValue and clip_delta is ignored.
     """
-
     def _compute_target_values(self, exp_batch):
         """Compute a batch of target return distributions."""
 
@@ -136,12 +129,8 @@ class CategoricalDQN(dqn.DQN):
         assert next_q_max.shape == (batch_size, n_atoms), next_q_max.shape
 
         # Tz: (batch_size, n_atoms)
-        Tz = (
-            batch_rewards[..., None]
-            + (1.0 - batch_terminal[..., None])
-            * torch.unsqueeze(exp_batch["discount"], 1)
-            * z_values[None]
-        )
+        Tz = (batch_rewards[..., None] + (1.0 - batch_terminal[..., None]) *
+              torch.unsqueeze(exp_batch["discount"], 1) * z_values[None])
         return _apply_categorical_projection(Tz, next_q_max, z_values)
 
     def _compute_y_and_t(self, exp_batch):
@@ -154,9 +143,7 @@ class CategoricalDQN(dqn.DQN):
 
         # (batch_size, n_actions, n_atoms)
         if self.recurrent:
-            qout, _ = pack_and_forward(
-                self.model, batch_state, exp_batch["recurrent_state"]
-            )
+            qout, _ = pack_and_forward(self.model, batch_state, exp_batch["recurrent_state"])
         else:
             qout = self.model(batch_state)
         n_atoms = qout.z_values.size()[0]
@@ -199,6 +186,4 @@ class CategoricalDQN(dqn.DQN):
                 batch_accumulator=self.batch_accumulator,
             )
         else:
-            return compute_value_loss(
-                eltwise_loss, batch_accumulator=self.batch_accumulator
-            )
+            return compute_value_loss(eltwise_loss, batch_accumulator=self.batch_accumulator)

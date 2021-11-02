@@ -17,27 +17,23 @@ class EpisodicReplayBuffer(AbstractEpisodicReplayBuffer):
         self.memory = RandomAccessQueue()
         self.capacity = capacity
 
-    def append(
-        self,
-        state,
-        action,
-        reward,
-        next_state=None,
-        next_action=None,
-        is_state_terminal=False,
-        env_id=0,
-        **kwargs
-    ):
+    def append(self,
+               state,
+               action,
+               reward,
+               next_state=None,
+               next_action=None,
+               is_state_terminal=False,
+               env_id=0,
+               **kwargs):
         current_episode = self.current_episode[env_id]
-        experience = dict(
-            state=state,
-            action=action,
-            reward=reward,
-            next_state=next_state,
-            next_action=next_action,
-            is_state_terminal=is_state_terminal,
-            **kwargs
-        )
+        experience = dict(state=state,
+                          action=action,
+                          reward=reward,
+                          next_state=next_state,
+                          next_action=next_action,
+                          is_state_terminal=is_state_terminal,
+                          **kwargs)
         current_episode.append(experience)
         if is_state_terminal:
             self.stop_current_episode(env_id=env_id)

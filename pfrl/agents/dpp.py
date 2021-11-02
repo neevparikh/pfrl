@@ -11,7 +11,6 @@ class AbstractDPP(DQN, metaclass=ABCMeta):
 
     See: https://arxiv.org/abs/1004.2027.
     """
-
     @abstractmethod
     def _l_operator(self, qout):
         raise NotImplementedError()
@@ -33,9 +32,7 @@ class AbstractDPP(DQN, metaclass=ABCMeta):
         batch_rewards = exp_batch["reward"]
         batch_terminal = exp_batch["is_state_terminal"]
 
-        return (
-            batch_rewards + exp_batch["discount"] * (1 - batch_terminal) * next_q_expect
-        )
+        return (batch_rewards + exp_batch["discount"] * (1 - batch_terminal) * next_q_expect)
 
     def _compute_y_and_t(self, exp_batch):
 
@@ -67,17 +64,13 @@ class AbstractDPP(DQN, metaclass=ABCMeta):
                 target_qout = self.target_model(batch_state)
 
             # Q'(s_t,a_t)
-            target_q = target_qout.evaluate_actions(batch_actions).reshape(
-                (batch_size, 1)
-            )
+            target_q = target_qout.evaluate_actions(batch_actions).reshape((batch_size, 1))
 
             # LQ'(s_t,a)
             target_q_expect = self._l_operator(target_qout).reshape((batch_size, 1))
 
             # r + g * LQ'(s_{t+1},a)
-            batch_q_target = self._compute_target_values(exp_batch).reshape(
-                (batch_size, 1)
-            )
+            batch_q_target = self._compute_target_values(exp_batch).reshape((batch_size, 1))
 
             # Q'(s_t,a_t) + r + g * LQ'(s_{t+1},a) - LQ'(s_t,a)
             t = target_q + batch_q_target - target_q_expect
@@ -93,7 +86,6 @@ class DPP(AbstractDPP):
 
     For other arguments, see DQN.
     """
-
     def __init__(self, *args, **kwargs):
         self.eta = kwargs.pop("eta", 1.0)
         super().__init__(*args, **kwargs)
@@ -110,7 +102,6 @@ class DPPL(AbstractDPP):
 
     For other arguments, see DQN.
     """
-
     def __init__(self, *args, **kwargs):
         self.eta = kwargs.pop("eta", 1.0)
         super().__init__(*args, **kwargs)
@@ -124,6 +115,5 @@ class DPPGreedy(AbstractDPP):
 
     This algorithm corresponds to DPP with eta = infinity.
     """
-
     def _l_operator(self, qout):
         return qout.max

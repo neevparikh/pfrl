@@ -12,7 +12,6 @@ class ScaleReward(gym.RewardWrapper):
         scale: Scale factor.
         original_reward: Reward before casting.
     """
-
     def __init__(self, env, scale):
         super().__init__(env)
         self.scale = scale

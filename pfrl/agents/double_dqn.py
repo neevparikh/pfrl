@@ -8,7 +8,6 @@ class DoubleDQN(dqn.DQN):
 
     See: http://arxiv.org/abs/1509.06461.
     """
-
     def _compute_target_values(self, exp_batch):
 
         batch_next_state = exp_batch["next_state"]

@@ -14,26 +14,24 @@ def save_agent_replay_buffer(agent, t, outdir, suffix="", logger=None):
 
 def ask_and_save_agent_replay_buffer(agent, t, outdir, suffix=""):
     if hasattr(agent, "replay_buffer") and ask_yes_no(
-        "Replay buffer has {} transitions. Do you save them to a file?".format(
-            len(agent.replay_buffer)
-        )
-    ):  # NOQA
+            "Replay buffer has {} transitions. Do you save them to a file?".format(
+                len(agent.replay_buffer))):  # NOQA
         save_agent_replay_buffer(agent, t, outdir, suffix=suffix)
 
 
 def train_agent(
-    agent,
-    env,
-    steps,
-    outdir,
-    checkpoint_freq=None,
-    max_episode_len=None,
-    step_offset=0,
-    evaluator=None,
-    successful_score=None,
-    step_hooks=(),
-    eval_during_episode=False,
-    logger=None,
+        agent,
+        env,
+        steps,
+        outdir,
+        checkpoint_freq=None,
+        max_episode_len=None,
+        step_offset=0,
+        evaluator=None,
+        successful_score=None,
+        step_hooks=(),
+        eval_during_episode=False,
+        logger=None,
 ):
 
     logger = logger or logging.getLogger(__name__)
@@ -86,10 +84,7 @@ def train_agent(
                     eval_stats = dict(agent.get_statistics())
                     eval_stats["eval_score"] = eval_score
                     eval_stats_history.append(eval_stats)
-                if (
-                    successful_score is not None
-                    and evaluator.max_score >= successful_score
-                ):
+                if (successful_score is not None and evaluator.max_score >= successful_score):
                     break
 
             if episode_end:
@@ -174,9 +169,7 @@ def train_agent_with_evaluation(
 
     for hook in evaluation_hooks:
         if not hook.support_train_agent:
-            raise ValueError(
-                "{} does not support train_agent_with_evaluation().".format(hook)
-            )
+            raise ValueError("{} does not support train_agent_with_evaluation().".format(hook))
 
     os.makedirs(outdir, exist_ok=True)
 

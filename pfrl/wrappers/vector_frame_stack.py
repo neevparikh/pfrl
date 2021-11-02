@@ -9,7 +9,6 @@ from pfrl.wrappers.atari_wrappers import LazyFrames
 
 class VectorEnvWrapper(VectorEnv):
     """VectorEnv analog to gym.Wrapper."""
-
     def __init__(self, env):
         self.env = env
         self.action_space = self.env.action_space
@@ -17,9 +16,7 @@ class VectorEnvWrapper(VectorEnv):
 
     def __getattr__(self, name):
         if name.startswith("_"):
-            raise AttributeError(
-                "attempted to get missing private attribute '{}'".format(name)
-            )
+            raise AttributeError("attempted to get missing private attribute '{}'".format(name))
         return getattr(self.env, name)
 
     def step(self, action):
@@ -65,7 +62,6 @@ class VectorFrameStack(VectorEnvWrapper):
         k (int): How many frames to stack.
         stack_axis (int): Axis along which frames are concatenated.
     """
-
     def __init__(self, env, k, stack_axis=0):
         """Stack k last frames."""
         VectorEnvWrapper.__init__(self, env)
@@ -76,9 +72,7 @@ class VectorFrameStack(VectorEnvWrapper):
         assert isinstance(orig_obs_space, spaces.Box)
         low = np.repeat(orig_obs_space.low, k, axis=self.stack_axis)
         high = np.repeat(orig_obs_space.high, k, axis=self.stack_axis)
-        self.observation_space = spaces.Box(
-            low=low, high=high, dtype=orig_obs_space.dtype
-        )
+        self.observation_space = spaces.Box(low=low, high=high, dtype=orig_obs_space.dtype)
 
     def reset(self, mask=None):
         batch_ob = self.env.reset(mask=mask)
@@ -99,7 +93,4 @@ class VectorFrameStack(VectorEnvWrapper):
     def _get_ob(self):
         assert len(self.frames) == self.env.num_envs
         assert len(self.frames[0]) == self.k
-        return [
-            LazyFrames(list(frames), stack_axis=self.stack_axis)
-            for frames in self.frames
-        ]
+        return [LazyFrames(list(frames), stack_axis=self.stack_axis) for frames in self.frames]

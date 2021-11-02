@@ -27,9 +27,11 @@ def compute_full_importance(pi, mu):
     return pimu
 
 
-def compute_policy_gradient_full_correction(
-    action_distrib, action_distrib_mu, action_value, v, truncation_threshold
-):
+def compute_policy_gradient_full_correction(action_distrib,
+                                            action_distrib_mu,
+                                            action_value,
+                                            v,
+                                            truncation_threshold):
     """Compute off-policy bias correction term wrt all actions."""
     assert isinstance(action_distrib, torch.distributions.Categorical)
     assert isinstance(action_distrib_mu, torch.distributions.Categorical)
@@ -37,37 +39,31 @@ def compute_policy_gradient_full_correction(
     assert np.isscalar(v)
     with torch.no_grad():
         rho_all_inv = compute_full_importance(action_distrib_mu, action_distrib)
-        correction_weight = (
-            torch.nn.functional.relu(1 - truncation_threshold * rho_all_inv)
-            * action_distrib.probs[0]
-        )
+        correction_weight = (torch.nn.functional.relu(1 - truncation_threshold * rho_all_inv) *
+                             action_distrib.probs[0])
         correction_advantage = action_value.q_values[0] - v
     # Categorical.logits is already normalized, i.e., logits[i] = log(probs[i])
     return -(correction_weight * action_distrib.logits * correction_advantage).sum(1)
 
 
-def compute_policy_gradient_sample_correction(
-    action_distrib, action_distrib_mu, action_value, v, truncation_threshold
-):
+def compute_policy_gradient_sample_correction(action_distrib,
+                                              action_distrib_mu,
+                                              action_value,
+                                              v,
+                                              truncation_threshold):
     """Compute off-policy bias correction term wrt a sampled action."""
     assert np.isscalar(v)
     assert truncation_threshold is not None
     with torch.no_grad():
         sample_action = action_distrib.sample()
-        rho_dash_inv = compute_importance(
-            action_distrib_mu, action_distrib, sample_action
-        )
+        rho_dash_inv = compute_importance(action_distrib_mu, action_distrib, sample_action)
         if truncation_threshold > 0 and rho_dash_inv >= 1 / truncation_threshold:
             return torch.as_tensor(0, dtype=torch.float)
         correction_weight = max(0, 1 - truncation_threshold * rho_dash_inv)
         assert correction_weight <= 1
         q = float(action_value.evaluate_actions(sample_action))
         correction_advantage = q - v
-    return -(
-        correction_weight
-        * action_distrib.log_prob(sample_action)
-        * correction_advantage
-    )
+    return -(correction_weight * action_distrib.log_prob(sample_action) * correction_advantage)
 
 
 def compute_policy_gradient_loss(
@@ -122,7 +118,6 @@ class ACERDiscreteActionHead(nn.Module):
         pi (Policy): Policy.
         q (QFunction): Q-function.
     """
-
     def __init__(self, pi, q):
         super().__init__()
         self.pi = pi
@@ -145,7 +140,6 @@ class ACERContinuousActionHead(nn.Module):
         adv (StateActionQFunction): Advantage function.
         n (int): Number of samples used to evaluate Q-values.
     """
-
     def __init__(self, pi, v, adv, n=5):
         super().__init__()
         self.pi = pi
@@ -158,10 +152,8 @@ class ACERContinuousActionHead(nn.Module):
         v = self.v(obs)
 
         def evaluator(action):
-            adv_mean = (
-                sum(self.adv((obs, action_distrib.sample())) for _ in range(self.n))
-                / self.n
-            )
+            adv_mean = (sum(self.adv((obs, action_distrib.sample())) for _ in range(self.n)) /
+                        self.n)
             return v + self.adv((obs, action)) - adv_mean
 
         action_value = SingleActionValue(evaluator)
@@ -192,9 +184,7 @@ def deepcopy_distribution(distrib):
             distrib.reinterpreted_batch_ndims,
         )
     elif isinstance(distrib, torch.distributions.Categorical):
-        return torch.distributions.Categorical(
-            logits=distrib.logits.clone().detach(),
-        )
+        return torch.distributions.Categorical(logits=distrib.logits.clone().detach(),)
     elif isinstance(distrib, torch.distributions.Normal):
         return torch.distributions.Normal(
             loc=distrib.loc.clone().detach(),
@@ -221,18 +211,12 @@ def compute_loss_with_kl_constraint(distrib, another_distrib, original_loss, del
         assert param.requires_grad
     # Compute g: a direction to minimize the original loss
     g = [
-        grad[0]
-        for grad in torch.autograd.grad(
-            [original_loss], distrib_params, retain_graph=True
-        )
+        grad[0] for grad in torch.autograd.grad([original_loss], distrib_params, retain_graph=True)
     ]
 
     # Compute k: a direction to increase KL div.
     kl = torch.distributions.kl_divergence(another_distrib, distrib)
-    k = [
-        grad[0]
-        for grad in torch.autograd.grad([-kl], distrib_params, retain_graph=True)
-    ]
+    k = [grad[0] for grad in torch.autograd.grad([-kl], distrib_params, retain_graph=True)]
 
     # Compute z: combination of g and k to keep small KL div.
     kg_dot = sum(torch.dot(kp.flatten(), gp.flatten()) for kp, gp in zip(k, g))
@@ -321,7 +305,7 @@ class ACER(agent.AttributeSavingMixin, agent.AsyncAgent):
         truncation_threshold=10,
         disable_online_update=False,
         n_times_replay=8,
-        replay_start_size=10 ** 4,
+        replay_start_size=10**4,
         normalize_loss_by_steps=True,
         act_deterministically=False,
         max_grad_norm=None,
@@ -537,7 +521,7 @@ class ACER(agent.AttributeSavingMixin, agent.AsyncAgent):
             if discrete:
                 c = min(1, rho)
             else:
-                c = min(1, rho ** (1 / ba.numel()))
+                c = min(1, rho**(1 / ba.numel()))
             Q_ret = c * (Q_ret - float(Q)) + float(v)
             Q_opc = Q_opc - float(Q) + float(v)
 
@@ -646,13 +630,9 @@ class ACER(agent.AttributeSavingMixin, agent.AsyncAgent):
             R = 0
         else:
             with torch.no_grad():
-                last_s = batch_states(
-                    [last_transition["next_state"]], self.device, self.phi
-                )
+                last_s = batch_states([last_transition["next_state"]], self.device, self.phi)
                 if self.recurrent:
-                    (_, _, last_v), _ = one_step_forward(
-                        self.model, last_s, model_recurrent_state
-                    )
+                    (_, _, last_v), _ = one_step_forward(self.model, last_s, model_recurrent_state)
                 else:
                     _, _, last_v = self.model(last_s)
             R = float(last_v)
@@ -698,9 +678,7 @@ class ACER(agent.AttributeSavingMixin, agent.AsyncAgent):
             )
 
         self.init_history_data_for_online_update()
-        self.train_recurrent_states = detach_recurrent_state(
-            self.train_recurrent_states
-        )
+        self.train_recurrent_states = detach_recurrent_state(self.train_recurrent_states)
 
     def act(self, obs):
         if self.training:
@@ -748,12 +726,9 @@ class ACER(agent.AttributeSavingMixin, agent.AsyncAgent):
         self.past_actions[self.t] = action
 
         # Update stats
-        self.average_value += (1 - self.average_value_decay) * (
-            float(v) - self.average_value
-        )
+        self.average_value += (1 - self.average_value_decay) * (float(v) - self.average_value)
         self.average_entropy += (1 - self.average_entropy_decay) * (
-            float(action_distrib.entropy()) - self.average_entropy
-        )
+            float(action_distrib.entropy()) - self.average_entropy)
 
         self.last_state = obs
         self.last_action = action.numpy()

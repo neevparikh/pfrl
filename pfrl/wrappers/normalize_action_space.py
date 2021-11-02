@@ -5,7 +5,6 @@ import numpy as np
 
 class NormalizeActionSpace(gym.ActionWrapper):
     """Normalize a Box action space to [-1, 1]^n."""
-
     def __init__(self, env):
         super().__init__(env)
         assert isinstance(env.action_space, gym.spaces.Box)

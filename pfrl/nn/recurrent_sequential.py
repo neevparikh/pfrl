@@ -22,7 +22,6 @@ class RecurrentSequential(Recurrent, nn.Sequential):
     Args:
         *layers: Callable objects.
     """
-
     def forward(self, sequences, recurrent_state):
         if recurrent_state is None:
             recurrent_state_queue = [None] * len(self.recurrent_children)

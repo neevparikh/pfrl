@@ -37,9 +37,7 @@ class NoopResetEnv(gym.Wrapper):
         if self.override_num_noops is not None:
             noops = self.override_num_noops
         else:
-            noops = self.unwrapped.np_random.randint(
-                1, self.noop_max + 1
-            )  # pylint: disable=E1101
+            noops = self.unwrapped.np_random.randint(1, self.noop_max + 1)  # pylint: disable=E1101
         assert noops > 0
         obs = None
         for _ in range(noops):
@@ -160,10 +158,8 @@ class WarpFrame(gym.ObservationWrapper):
         To use this wrapper, OpenCV-Python is required.
         """
         if not _is_cv2_available:
-            raise RuntimeError(
-                "Cannot import cv2 module. Please install OpenCV-Python to use"
-                " WarpFrame."
-            )
+            raise RuntimeError("Cannot import cv2 module. Please install OpenCV-Python to use"
+                               " WarpFrame.")
         gym.ObservationWrapper.__init__(self, env)
         self.width = 84
         self.height = 84
@@ -171,15 +167,14 @@ class WarpFrame(gym.ObservationWrapper):
             "hwc": (self.height, self.width, 1),
             "chw": (1, self.height, self.width),
         }
-        self.observation_space = spaces.Box(
-            low=0, high=255, shape=shape[channel_order], dtype=np.uint8
-        )
+        self.observation_space = spaces.Box(low=0,
+                                            high=255,
+                                            shape=shape[channel_order],
+                                            dtype=np.uint8)
 
     def observation(self, frame):
         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
-        frame = cv2.resize(
-            frame, (self.width, self.height), interpolation=cv2.INTER_AREA
-        )
+        frame = cv2.resize(frame, (self.width, self.height), interpolation=cv2.INTER_AREA)
         return frame.reshape(self.observation_space.low.shape)
 
 
@@ -200,9 +195,7 @@ class FrameStack(gym.Wrapper):
         orig_obs_space = env.observation_space
         low = np.repeat(orig_obs_space.low, k, axis=self.stack_axis)
         high = np.repeat(orig_obs_space.high, k, axis=self.stack_axis)
-        self.observation_space = spaces.Box(
-            low=low, high=high, dtype=orig_obs_space.dtype
-        )
+        self.observation_space = spaces.Box(low=low, high=high, dtype=orig_obs_space.dtype)
 
     def reset(self):
         ob = self.env.reset()
@@ -226,7 +219,6 @@ class ScaledFloatFrame(gym.ObservationWrapper):
     Especially, when the original env.observation_space is np.uint8,
     this wrapper converts frame values into [0.0, 1.0] of dtype np.float32.
     """
-
     def __init__(self, env):
         assert isinstance(env.observation_space, spaces.Box)
         gym.ObservationWrapper.__init__(self, env)
@@ -258,7 +250,6 @@ class LazyFrames(object):
 
     You'd not believe how complex the previous solution was.
     """
-
     def __init__(self, frames, stack_axis=2):
         self.stack_axis = stack_axis
         self._frames = frames
@@ -272,7 +263,6 @@ class LazyFrames(object):
 
 class FlickerFrame(gym.ObservationWrapper):
     """Stochastically flicker frames."""
-
     def __init__(self, env):
         gym.ObservationWrapper.__init__(self, env)
 

@@ -19,21 +19,16 @@ class LargeAtariCNN(nn.Module):
 
     See: https://www.nature.com/articles/nature14236
     """
-
-    def __init__(
-        self, n_input_channels=4, n_output_channels=512, activation=F.relu, bias=0.1
-    ):
+    def __init__(self, n_input_channels=4, n_output_channels=512, activation=F.relu, bias=0.1):
         self.n_input_channels = n_input_channels
         self.activation = activation
         self.n_output_channels = n_output_channels
         super().__init__()
-        self.layers = nn.ModuleList(
-            [
-                nn.Conv2d(n_input_channels, 32, 8, stride=4),
-                nn.Conv2d(32, 64, 4, stride=2),
-                nn.Conv2d(64, 64, 3, stride=1),
-            ]
-        )
+        self.layers = nn.ModuleList([
+            nn.Conv2d(n_input_channels, 32, 8, stride=4),
+            nn.Conv2d(32, 64, 4, stride=2),
+            nn.Conv2d(64, 64, 3, stride=1),
+        ])
         self.output = nn.Linear(3136, n_output_channels)
 
         self.apply(init_chainer_default)
@@ -52,20 +47,15 @@ class SmallAtariCNN(nn.Module):
 
     See: https://arxiv.org/abs/1312.5602
     """
-
-    def __init__(
-        self, n_input_channels=4, n_output_channels=256, activation=F.relu, bias=0.1
-    ):
+    def __init__(self, n_input_channels=4, n_output_channels=256, activation=F.relu, bias=0.1):
         self.n_input_channels = n_input_channels
         self.activation = activation
         self.n_output_channels = n_output_channels
         super().__init__()
-        self.layers = nn.ModuleList(
-            [
-                nn.Conv2d(n_input_channels, 16, 8, stride=4),
-                nn.Conv2d(16, 32, 4, stride=2),
-            ]
-        )
+        self.layers = nn.ModuleList([
+            nn.Conv2d(n_input_channels, 16, 8, stride=4),
+            nn.Conv2d(16, 32, 4, stride=2),
+        ])
         self.output = nn.Linear(2592, n_output_channels)
 
         self.apply(init_chainer_default)

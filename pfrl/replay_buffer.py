@@ -18,19 +18,16 @@ class AbstractReplayBuffer(object, metaclass=ABCMeta):
     You can append transitions to the replay buffer and later sample from it.
     Replay buffers are typically used in experience replay.
     """
-
     @abstractmethod
-    def append(
-        self,
-        state,
-        action,
-        reward,
-        next_state=None,
-        next_action=None,
-        is_state_terminal=False,
-        env_id=0,
-        **kwargs
-    ):
+    def append(self,
+               state,
+               action,
+               reward,
+               next_state=None,
+               next_action=None,
+               is_state_terminal=False,
+               env_id=0,
+               **kwargs):
         """Append a transition to this replay buffer.
 
         Args:
@@ -119,7 +116,6 @@ class AbstractEpisodicReplayBuffer(AbstractReplayBuffer):
 
     Episodic replay buffers allows you to append and sample episodes.
     """
-
     @abstractmethod
     def sample_episodes(self, n_episodes, max_len=None):
         """Sample n unique (sub)episodes from this replay buffer.
@@ -151,7 +147,7 @@ def random_subseq(seq, subseq_len):
         return seq
     else:
         i = np.random.randint(0, len(seq) - subseq_len + 1)
-        return seq[i : i + subseq_len]
+        return seq[i:i + subseq_len]
 
 
 def batch_experiences(experiences, device, phi, gamma, batch_states=batch_states):
@@ -176,39 +172,38 @@ def batch_experiences(experiences, device, phi, gamma, batch_states=batch_states
     """
 
     batch_exp = {
-        "state": batch_states([elem[0]["state"] for elem in experiences], device, phi),
-        "action": torch.as_tensor(
-            [elem[0]["action"] for elem in experiences], device=device
-        ),
-        "reward": torch.as_tensor(
-            [
-                sum((gamma ** i) * exp[i]["reward"] for i in range(len(exp)))
-                for exp in experiences
-            ],
-            dtype=torch.float32,
-            device=device,
-        ),
-        "next_state": batch_states(
-            [elem[-1]["next_state"] for elem in experiences], device, phi
-        ),
-        "is_state_terminal": torch.as_tensor(
-            [
-                any(transition["is_state_terminal"] for transition in exp)
-                for exp in experiences
-            ],
-            dtype=torch.float32,
-            device=device,
-        ),
-        "discount": torch.as_tensor(
-            [(gamma ** len(elem)) for elem in experiences],
-            dtype=torch.float32,
-            device=device,
-        ),
+        "state":
+            batch_states([elem[0]["state"] for elem in experiences], device, phi),
+        "action":
+            torch.as_tensor([elem[0]["action"] for elem in experiences], device=device),
+        "reward":
+            torch.as_tensor(
+                [
+                    sum((gamma**i) * exp[i]["reward"]
+                        for i in range(len(exp)))
+                    for exp in experiences
+                ],
+                dtype=torch.float32,
+                device=device,
+            ),
+        "next_state":
+            batch_states([elem[-1]["next_state"] for elem in experiences], device, phi),
+        "is_state_terminal":
+            torch.as_tensor(
+                [any(transition["is_state_terminal"] for transition in exp) for exp in experiences],
+                dtype=torch.float32,
+                device=device,
+            ),
+        "discount":
+            torch.as_tensor(
+                [(gamma**len(elem)) for elem in experiences],
+                dtype=torch.float32,
+                device=device,
+            ),
     }
     if all(elem[-1]["next_action"] is not None for elem in experiences):
         batch_exp["next_action"] = torch.as_tensor(
-            [elem[-1]["next_action"] for elem in experiences], device=device
-        )
+            [elem[-1]["next_action"] for elem in experiences], device=device)
     return batch_exp
 
 
@@ -216,9 +211,7 @@ def _is_sorted_desc_by_lengths(lst):
     return all(len(a) >= len(b) for a, b in zip(lst, lst[1:]))
 
 
-def batch_recurrent_experiences(
-    experiences, device, phi, gamma, batch_states=batch_states
-):
+def batch_recurrent_experiences(experiences, device, phi, gamma, batch_states=batch_states):
     """Batch experiences for recurrent model updates.
 
     Args:
@@ -242,41 +235,42 @@ def batch_recurrent_experiences(
     flat_transitions = flatten_sequences_time_first(experiences)
     batch_exp = {
         "state": [
-            batch_states([transition["state"] for transition in ep], device, phi)
+            batch_states([transition["state"]
+                          for transition in ep], device, phi)
             for ep in experiences
         ],
-        "action": torch.as_tensor(
-            [transition["action"] for transition in flat_transitions], device=device
-        ),
-        "reward": torch.as_tensor(
-            [transition["reward"] for transition in flat_transitions],
-            dtype=torch.float,
-            device=device,
-        ),
+        "action":
+            torch.as_tensor([transition["action"] for transition in flat_transitions],
+                            device=device),
+        "reward":
+            torch.as_tensor(
+                [transition["reward"] for transition in flat_transitions],
+                dtype=torch.float,
+                device=device,
+            ),
         "next_state": [
-            batch_states([transition["next_state"] for transition in ep], device, phi)
+            batch_states([transition["next_state"]
+                          for transition in ep], device, phi)
             for ep in experiences
         ],
-        "is_state_terminal": torch.as_tensor(
-            [transition["is_state_terminal"] for transition in flat_transitions],
-            dtype=torch.float,
-            device=device,
-        ),
-        "discount": torch.full(
-            (len(flat_transitions),), gamma, dtype=torch.float, device=device
-        ),
-        "recurrent_state": recurrent_state_from_numpy(
-            concatenate_recurrent_states(
-                [ep[0]["recurrent_state"] for ep in experiences]
+        "is_state_terminal":
+            torch.as_tensor(
+                [transition["is_state_terminal"] for transition in flat_transitions],
+                dtype=torch.float,
+                device=device,
             ),
-            device,
-        ),
-        "next_recurrent_state": recurrent_state_from_numpy(
-            concatenate_recurrent_states(
-                [ep[0]["next_recurrent_state"] for ep in experiences]
+        "discount":
+            torch.full((len(flat_transitions),), gamma, dtype=torch.float, device=device),
+        "recurrent_state":
+            recurrent_state_from_numpy(
+                concatenate_recurrent_states([ep[0]["recurrent_state"] for ep in experiences]),
+                device,
             ),
-            device,
-        ),
+        "next_recurrent_state":
+            recurrent_state_from_numpy(
+                concatenate_recurrent_states([ep[0]["next_recurrent_state"] for ep in experiences]),
+                device,
+            ),
     }
     # Batch next actions only when all the transitions have them
     if all(transition["next_action"] is not None for transition in flat_transitions):
@@ -304,7 +298,6 @@ class ReplayUpdater(object):
         episodic_update_len (int or None): Subsequences of this length are used
             for update if set int and episodic_update=True
     """
-
     def __init__(
         self,
         replay_buffer,
@@ -347,9 +340,8 @@ class ReplayUpdater(object):
 
         for _ in range(self.n_times_update):
             if self.episodic_update:
-                episodes = self.replay_buffer.sample_episodes(
-                    self.batchsize, self.episodic_update_len
-                )
+                episodes = self.replay_buffer.sample_episodes(self.batchsize,
+                                                              self.episodic_update_len)
                 self.update_func(episodes)
             else:
                 transitions = self.replay_buffer.sample(self.batchsize)

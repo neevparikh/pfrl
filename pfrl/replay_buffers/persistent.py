@@ -38,47 +38,43 @@ class PersistentReplayBuffer(ReplayBuffer):
             storage - hardware is sometimes cheaper than software.
 
     """
-
-    def __init__(
-        self,
-        dirname,
-        capacity,
-        *,
-        ancestor=None,
-        logger=None,
-        distributed=False,
-        group=None
-    ):
+    def __init__(self,
+                 dirname,
+                 capacity,
+                 *,
+                 ancestor=None,
+                 logger=None,
+                 distributed=False,
+                 group=None):
         super().__init__(capacity)
 
         if not distributed:
-            self.memory = PersistentRandomAccessQueue(
-                dirname, capacity, ancestor=ancestor, logger=logger
-            )
+            self.memory = PersistentRandomAccessQueue(dirname,
+                                                      capacity,
+                                                      ancestor=ancestor,
+                                                      logger=logger)
         else:
             try:
                 # Use distributed versions of PersistentRandomAccessQueue
                 import pfrlmn.collections.persistent_collections as mn_coll
 
-                self.memory = mn_coll.PersistentRandomAccessQueue(
-                    dirname, capacity, ancestor=ancestor, logger=logger, group=group
-                )
+                self.memory = mn_coll.PersistentRandomAccessQueue(dirname,
+                                                                  capacity,
+                                                                  ancestor=ancestor,
+                                                                  logger=logger,
+                                                                  group=group)
 
             except ImportError:
                 # "pfrlmn" package is not publicly available as of pfrl release.
-                raise RuntimeError(
-                    "`pfrlmn` private package is required "
-                    "to enable distributed execution support "
-                    "of PersistentReplayBuffer."
-                )
+                raise RuntimeError("`pfrlmn` private package is required "
+                                   "to enable distributed execution support "
+                                   "of PersistentReplayBuffer.")
 
     def save(self, _):
         pass
 
     def load(self, _):
-        warnings.warn(
-            "{}.load() has been ignored, as it is persistent replay buffer".format(self)
-        )
+        warnings.warn("{}.load() has been ignored, as it is persistent replay buffer".format(self))
 
 
 class PersistentEpisodicReplayBuffer(EpisodicReplayBuffer):
@@ -105,29 +101,28 @@ class PersistentEpisodicReplayBuffer(EpisodicReplayBuffer):
            is separated.
 
     """
-
-    def __init__(
-        self,
-        dirname,
-        capacity,
-        *,
-        ancestor=None,
-        logger=None,
-        distributed=False,
-        group=None
-    ):
+    def __init__(self,
+                 dirname,
+                 capacity,
+                 *,
+                 ancestor=None,
+                 logger=None,
+                 distributed=False,
+                 group=None):
         super().__init__(capacity)
 
         self.memory_dir = os.path.join(dirname, "memory")
         self.episodic_memory_dir = os.path.join(dirname, "episodic_memory")
 
         if not distributed:
-            self.memory = PersistentRandomAccessQueue(
-                self.memory_dir, capacity, ancestor=ancestor, logger=logger
-            )
-            self.episodic_memory = PersistentRandomAccessQueue(
-                self.episodic_memory_dir, capacity, ancestor=ancestor, logger=logger
-            )
+            self.memory = PersistentRandomAccessQueue(self.memory_dir,
+                                                      capacity,
+                                                      ancestor=ancestor,
+                                                      logger=logger)
+            self.episodic_memory = PersistentRandomAccessQueue(self.episodic_memory_dir,
+                                                               capacity,
+                                                               ancestor=ancestor,
+                                                               logger=logger)
         else:
             try:
                 # Use distributed versions of PersistentRandomAccessQueue
@@ -150,16 +145,12 @@ class PersistentEpisodicReplayBuffer(EpisodicReplayBuffer):
 
             except ImportError:
                 # "pfrlmn" package is not publicly available as of pfrl release.
-                raise RuntimeError(
-                    "`pfrlmn` private package is required "
-                    "to enable distributed execution support "
-                    "of PersistentEpisodicReplayBuffer."
-                )
+                raise RuntimeError("`pfrlmn` private package is required "
+                                   "to enable distributed execution support "
+                                   "of PersistentEpisodicReplayBuffer.")
 
     def save(self, _):
         pass
 
     def load(self, _):
-        warnings.warn(
-            "PersistentEpisodicReplayBuffer.load() is called but it has not effect."
-        )
+        warnings.warn("PersistentEpisodicReplayBuffer.load() is called but it has not effect.")

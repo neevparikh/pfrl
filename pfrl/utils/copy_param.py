@@ -24,9 +24,7 @@ def soft_copy_param(target_link, source_link, tau):
 
 def copy_grad(target_link, source_link):
     """Copy gradients of a link to another link."""
-    for target_param, source_param in zip(
-        target_link.parameters(), source_link.parameters()
-    ):
+    for target_param, source_param in zip(target_link.parameters(), source_link.parameters()):
         assert target_param.shape == source_param.shape
         if source_param.grad is None:
             target_param.grad = None

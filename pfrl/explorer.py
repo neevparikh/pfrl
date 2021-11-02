@@ -3,7 +3,6 @@ from abc import ABCMeta, abstractmethod
 
 class Explorer(object, metaclass=ABCMeta):
     """Abstract explorer."""
-
     @abstractmethod
     def select_action(self, t, greedy_action_func, action_value=None):
         """Select an action.

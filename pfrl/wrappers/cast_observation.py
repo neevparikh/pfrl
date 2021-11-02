@@ -12,7 +12,6 @@ class CastObservation(gym.ObservationWrapper):
     Attributes:
         original_observation: Observation before casting.
     """
-
     def __init__(self, env, dtype):
         super().__init__(env)
         self.dtype = dtype
@@ -31,6 +30,5 @@ class CastObservationToFloat32(CastObservation):
     Attributes:
         original_observation: Observation before casting.
     """
-
     def __init__(self, env):
         super().__init__(env, np.float32)

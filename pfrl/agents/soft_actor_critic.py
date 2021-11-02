@@ -27,12 +27,10 @@ class TemperatureHolder(nn.Module):
     Args:
         initial_log_temperature (float): Initial value of log(temperature).
     """
-
     def __init__(self, initial_log_temperature=0):
         super().__init__()
         self.log_temperature = nn.Parameter(
-            torch.tensor(initial_log_temperature, dtype=torch.float32)
-        )
+            torch.tensor(initial_log_temperature, dtype=torch.float32))
 
     def forward(self):
         """Return a temperature as a torch.Tensor."""
@@ -158,16 +156,12 @@ class SoftActorCritic(AttributeSavingMixin, BatchAgent):
         self.entropy_target = entropy_target
         if self.entropy_target is not None:
             self.temperature_holder = TemperatureHolder(
-                initial_log_temperature=np.log(initial_temperature)
-            )
+                initial_log_temperature=np.log(initial_temperature))
             if temperature_optimizer_lr is not None:
-                self.temperature_optimizer = torch.optim.Adam(
-                    self.temperature_holder.parameters(), lr=temperature_optimizer_lr
-                )
+                self.temperature_optimizer = torch.optim.Adam(self.temperature_holder.parameters(),
+                                                              lr=temperature_optimizer_lr)
             else:
-                self.temperature_optimizer = torch.optim.Adam(
-                    self.temperature_holder.parameters()
-                )
+                self.temperature_optimizer = torch.optim.Adam(self.temperature_holder.parameters())
             if gpu is not None and gpu >= 0:
                 self.temperature_holder.to(self.device)
         else:
@@ -235,8 +229,7 @@ class SoftActorCritic(AttributeSavingMixin, BatchAgent):
             assert next_q.shape == entropy_term.shape
 
             target_q = batch_rewards + batch_discount * (
-                1.0 - batch_terminal
-            ) * torch.flatten(next_q - entropy_term)
+                1.0 - batch_terminal) * torch.flatten(next_q - entropy_term)
 
         predict_q1 = torch.flatten(self.q_func1((batch_state, batch_actions)))
         predict_q2 = torch.flatten(self.q_func2((batch_state, batch_actions)))
@@ -301,9 +294,7 @@ class SoftActorCritic(AttributeSavingMixin, BatchAgent):
         # Record entropy
         with torch.no_grad():
             try:
-                self.entropy_record.extend(
-                    action_distrib.entropy().detach().cpu().numpy()
-                )
+                self.entropy_record.extend(action_distrib.entropy().detach().cpu().numpy())
             except NotImplementedError:
                 # Record - log p(x) instead
                 self.entropy_record.extend(-log_prob.detach().cpu().numpy())
@@ -337,9 +328,7 @@ class SoftActorCritic(AttributeSavingMixin, BatchAgent):
 
     def _batch_act_eval(self, batch_obs):
         assert not self.training
-        return self.batch_select_greedy_action(
-            batch_obs, deterministic=self.act_deterministically
-        )
+        return self.batch_select_greedy_action(batch_obs, deterministic=self.act_deterministically)
 
     def _batch_act_train(self, batch_obs):
         assert self.training

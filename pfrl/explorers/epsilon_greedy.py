@@ -20,7 +20,6 @@ class ConstantEpsilonGreedy(explorer.Explorer):
       random_action_func: function with no argument that returns action
       logger: logger used
     """
-
     def __init__(self, epsilon, random_action_func, logger=getLogger(__name__)):
         assert epsilon >= 0 and epsilon <= 1
         self.epsilon = epsilon
@@ -49,14 +48,13 @@ class LinearDecayEpsilonGreedy(explorer.Explorer):
       random_action_func: function with no argument that returns action
       logger: logger used
     """
-
     def __init__(
-        self,
-        start_epsilon,
-        end_epsilon,
-        decay_steps,
-        random_action_func,
-        logger=getLogger(__name__),
+            self,
+            start_epsilon,
+            end_epsilon,
+            decay_steps,
+            random_action_func,
+            logger=getLogger(__name__),
     ):
         assert start_epsilon >= 0 and start_epsilon <= 1
         assert end_epsilon >= 0 and end_epsilon <= 1
@@ -98,14 +96,13 @@ class ExponentialDecayEpsilonGreedy(explorer.Explorer):
       random_action_func: function with no argument that returns action
       logger: logger used
     """
-
     def __init__(
-        self,
-        start_epsilon,
-        end_epsilon,
-        decay,
-        random_action_func,
-        logger=getLogger(__name__),
+            self,
+            start_epsilon,
+            end_epsilon,
+            decay,
+            random_action_func,
+            logger=getLogger(__name__),
     ):
         assert 0 <= start_epsilon <= 1
         assert 0 <= end_epsilon <= 1
@@ -118,7 +115,7 @@ class ExponentialDecayEpsilonGreedy(explorer.Explorer):
         self.epsilon = start_epsilon
 
     def compute_epsilon(self, t):
-        epsilon = self.start_epsilon * (self.decay ** t)
+        epsilon = self.start_epsilon * (self.decay**t)
         return max(epsilon, self.end_epsilon)
 
     def select_action(self, t, greedy_action_func, action_value=None):

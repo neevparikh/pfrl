@@ -58,28 +58,28 @@ class DDPG(AttributeSavingMixin, BatchAgent):
     saved_attributes = ("model", "target_model", "actor_optimizer", "critic_optimizer")
 
     def __init__(
-        self,
-        policy,
-        q_func,
-        actor_optimizer,
-        critic_optimizer,
-        replay_buffer,
-        gamma,
-        explorer,
-        gpu=None,
-        replay_start_size=50000,
-        minibatch_size=32,
-        update_interval=1,
-        target_update_interval=10000,
-        phi=lambda x: x,
-        target_update_method="hard",
-        soft_update_tau=1e-2,
-        n_times_update=1,
-        recurrent=False,
-        episodic_update_len=None,
-        logger=getLogger(__name__),
-        batch_states=batch_states,
-        burnin_action_func=None,
+            self,
+            policy,
+            q_func,
+            actor_optimizer,
+            critic_optimizer,
+            replay_buffer,
+            gamma,
+            explorer,
+            gpu=None,
+            replay_start_size=50000,
+            minibatch_size=32,
+            update_interval=1,
+            target_update_interval=10000,
+            phi=lambda x: x,
+            target_update_method="hard",
+            soft_update_tau=1e-2,
+            n_times_update=1,
+            recurrent=False,
+            episodic_update_len=None,
+            logger=getLogger(__name__),
+            batch_states=batch_states,
+            burnin_action_func=None,
     ):
 
         self.model = nn.ModuleList([policy, q_func])
@@ -160,9 +160,8 @@ class DDPG(AttributeSavingMixin, BatchAgent):
             assert not self.recurrent
             next_actions = self.target_policy(batch_next_state).sample()
             next_q = self.target_q_function((batch_next_state, next_actions))
-            target_q = batch_rewards + self.gamma * (
-                1.0 - batch_terminal
-            ) * next_q.reshape((batchsize,))
+            target_q = batch_rewards + self.gamma * (1.0 - batch_terminal) * next_q.reshape(
+                (batchsize,))
 
         predict_q = self.q_function((batch_state, batch_actions)).reshape((batchsize,))
 
@@ -217,18 +216,14 @@ class DDPG(AttributeSavingMixin, BatchAgent):
                 if len(ep) <= i:
                     break
                 transitions.append([ep[i]])
-            batch = batch_experiences(
-                transitions, xp=self.device, phi=self.phi, gamma=self.gamma
-            )
+            batch = batch_experiences(transitions, xp=self.device, phi=self.phi, gamma=self.gamma)
             batches.append(batch)
 
         with self.model.state_reset(), self.target_model.state_reset():
 
             # Since the target model is evaluated one-step ahead,
             # its internal states need to be updated
-            self.target_q_function.update_state(
-                batches[0]["state"], batches[0]["action"]
-            )
+            self.target_q_function.update_state(batches[0]["state"], batches[0]["action"])
             self.target_policy(batches[0]["state"])
 
             # Update critic through time

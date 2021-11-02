@@ -12,7 +12,6 @@ class Branched(torch.nn.Module):
     Args:
         *modules: Child modules. Each module should be callable.
     """
-
     def __init__(self, *modules):
         super().__init__()
         self.child_modules = torch.nn.ModuleList(modules)

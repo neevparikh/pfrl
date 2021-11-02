@@ -19,14 +19,14 @@ class StateQFunctionActor(agent.AsyncAgent):
     shared_attributes = ()
 
     def __init__(
-        self,
-        pipe,
-        model,
-        explorer,
-        phi=lambda x: x,
-        recurrent=False,
-        logger=getLogger(__name__),
-        batch_states=batch_states,
+            self,
+            pipe,
+            model,
+            explorer,
+            phi=lambda x: x,
+            recurrent=False,
+            logger=getLogger(__name__),
+            batch_states=batch_states,
     ):
         self.pipe = pipe
         self.model = model
@@ -80,9 +80,9 @@ class StateQFunctionActor(agent.AsyncAgent):
             action_value = self._evaluate_model_and_update_recurrent_states([obs])
             greedy_action = action_value.greedy_actions.detach().cpu().numpy()[0]
         if self.training:
-            action = self.explorer.select_action(
-                self.t, lambda: greedy_action, action_value=action_value
-            )
+            action = self.explorer.select_action(self.t,
+                                                 lambda: greedy_action,
+                                                 action_value=action_value)
             self.last_state = obs
             self.last_action = action
         else:
@@ -104,14 +104,10 @@ class StateQFunctionActor(agent.AsyncAgent):
             }
             if self.recurrent:
                 transition["recurrent_state"] = recurrent_state_as_numpy(
-                    get_recurrent_state_at(
-                        self.train_prev_recurrent_states, 0, detach=True
-                    )
-                )
+                    get_recurrent_state_at(self.train_prev_recurrent_states, 0, detach=True))
                 self.train_prev_recurrent_states = None
                 transition["next_recurrent_state"] = recurrent_state_as_numpy(
-                    get_recurrent_state_at(self.train_recurrent_states, 0, detach=True)
-                )
+                    get_recurrent_state_at(self.train_recurrent_states, 0, detach=True))
             self._send_to_learner(transition, stop_episode=done or reset)
             if (done or reset) and self.recurrent:
                 self.train_prev_recurrent_states = None

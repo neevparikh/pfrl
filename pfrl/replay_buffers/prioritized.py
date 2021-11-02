@@ -24,10 +24,7 @@ class PriorityWeightError(object):
             batch. ``'memory'``: divide by the maximum weight in the memory.
             ``False``: do not normalize.
     """
-
-    def __init__(
-        self, alpha, beta0, betasteps, eps, normalize_by_max, error_min, error_max
-    ):
+    def __init__(self, alpha, beta0, betasteps, eps, normalize_by_max, error_min, error_max):
         assert 0.0 <= alpha
         assert 0.0 <= beta0 <= 1.0
         self.alpha = alpha
@@ -52,16 +49,16 @@ class PriorityWeightError(object):
                 error = min(self.error_max, error)
             return error
 
-        return [(_clip_error(d) + self.eps) ** self.alpha for d in errors]
+        return [(_clip_error(d) + self.eps)**self.alpha for d in errors]
 
     def weights_from_probabilities(self, probabilities, min_probability):
         if self.normalize_by_max == "batch":
             # discard global min and compute batch min
             min_probability = np.min(probabilities)
         if self.normalize_by_max:
-            weights = [(p / min_probability) ** -self.beta for p in probabilities]
+            weights = [(p / min_probability)**-self.beta for p in probabilities]
         else:
-            weights = [(len(self.memory) * p) ** -self.beta for p in probabilities]
+            weights = [(len(self.memory) * p)**-self.beta for p in probabilities]
         self.beta = min(1.0, self.beta + self.beta_add)
         return weights
 
@@ -83,7 +80,6 @@ class PrioritizedReplayBuffer(ReplayBuffer, PriorityWeightError):
             batch. ``'memory'``: divide by the maximum weight in the memory.
             ``False``: do not normalize
     """
-
     def __init__(
         self,
         capacity=None,
@@ -101,8 +97,7 @@ class PrioritizedReplayBuffer(ReplayBuffer, PriorityWeightError):
         self.num_steps = num_steps
         self.memory = PrioritizedBuffer(capacity=capacity)
         self.last_n_transitions = collections.defaultdict(
-            lambda: collections.deque([], maxlen=num_steps)
-        )
+            lambda: collections.deque([], maxlen=num_steps))
         PriorityWeightError.__init__(
             self,
             alpha,

@@ -97,15 +97,13 @@ def train_loop(
 
                 # Evaluate the current agent
                 if evaluator is not None:
-                    eval_score = evaluator.evaluate_if_necessary(
-                        t=global_t, episodes=global_episodes, env=eval_env, agent=agent
-                    )
+                    eval_score = evaluator.evaluate_if_necessary(t=global_t,
+                                                                 episodes=global_episodes,
+                                                                 env=eval_env,
+                                                                 agent=agent)
 
-                    if (
-                        eval_score is not None
-                        and successful_score is not None
-                        and eval_score >= successful_score
-                    ):
+                    if (eval_score is not None and successful_score is not None and
+                            eval_score >= successful_score):
                         stop_event.set()
                         successful = True
                         # Break immediately in order to avoid an additional
@@ -151,8 +149,8 @@ def train_agent_async(
     processes,
     make_env,
     profile=False,
-    steps=8 * 10 ** 7,
-    eval_interval=10 ** 6,
+    steps=8 * 10**7,
+    eval_interval=10**6,
     eval_n_steps=None,
     eval_n_episodes=10,
     eval_success_threshold=0.0,
@@ -311,9 +309,7 @@ def train_agent_async(
         if profile:
             import cProfile
 
-            cProfile.runctx(
-                "f()", globals(), locals(), "profile-{}.out".format(os.getpid())
-            )
+            cProfile.runctx("f()", globals(), locals(), "profile-{}.out".format(os.getpid()))
         else:
             f()
 

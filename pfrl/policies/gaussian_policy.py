@@ -21,7 +21,6 @@ class GaussianHeadWithStateIndependentCovariance(nn.Module):
             parameter. It should always return positive values.
         var_param_init (float): Initial value the var parameter.
     """
-
     def __init__(
         self,
         action_size,
@@ -38,8 +37,7 @@ class GaussianHeadWithStateIndependentCovariance(nn.Module):
             torch.tensor(
                 np.broadcast_to(var_param_init, var_size),
                 dtype=torch.float,
-            )
-        )
+            ))
 
     def forward(self, mean):
         """Return a Gaussian with given mean.
@@ -54,8 +52,7 @@ class GaussianHeadWithStateIndependentCovariance(nn.Module):
         """
         var = self.var_func(self.var_param)
         return torch.distributions.Independent(
-            torch.distributions.Normal(loc=mean, scale=torch.sqrt(var)), 1
-        )
+            torch.distributions.Normal(loc=mean, scale=torch.sqrt(var)), 1)
 
 
 class GaussianHeadWithDiagonalCovariance(nn.Module):
@@ -69,7 +66,6 @@ class GaussianHeadWithDiagonalCovariance(nn.Module):
         var_func (callable): Callable that computes the variance
             from the second input. It should always return positive values.
     """
-
     def __init__(self, var_func=nn.functional.softplus):
         super().__init__()
         self.var_func = var_func
@@ -88,9 +84,7 @@ class GaussianHeadWithDiagonalCovariance(nn.Module):
         assert mean_and_var.ndim == 2
         mean, pre_var = mean_and_var.chunk(2, dim=1)
         scale = self.var_func(pre_var).sqrt()
-        return torch.distributions.Independent(
-            torch.distributions.Normal(loc=mean, scale=scale), 1
-        )
+        return torch.distributions.Independent(torch.distributions.Normal(loc=mean, scale=scale), 1)
 
 
 class GaussianHeadWithFixedCovariance(nn.Module):
@@ -103,7 +97,6 @@ class GaussianHeadWithFixedCovariance(nn.Module):
     Args:
         scale (float): Scale parameter.
     """
-
     def __init__(self, scale=1):
         super().__init__()
         self.scale = scale
@@ -119,5 +112,4 @@ class GaussianHeadWithFixedCovariance(nn.Module):
                 is the mean argument and whose scale is fixed.
         """
         return torch.distributions.Independent(
-            torch.distributions.Normal(loc=mean, scale=self.scale), 1
-        )
+            torch.distributions.Normal(loc=mean, scale=self.scale), 1)
