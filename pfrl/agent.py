@@ -160,8 +160,8 @@ class BatchAgent(Agent, metaclass=ABCMeta):
     def act(self, obs: Any) -> Any:
         return self.batch_act([obs])[0]
 
-    def observe(self, obs: Any, reward: float, done: bool, reset: bool) -> None:
-        self.batch_observe([obs], [reward], [done], [reset])
+    def observe(self, obs: Any, reward: float, done: bool, reset: bool, info: Any) -> None:
+        self.batch_observe([obs], [reward], [done], [reset], [info])
 
     @abstractmethod
     def batch_act(self, batch_obs: Sequence[Any]) -> Sequence[Any]:
@@ -182,6 +182,7 @@ class BatchAgent(Agent, metaclass=ABCMeta):
         batch_reward: Sequence[float],
         batch_done: Sequence[bool],
         batch_reset: Sequence[bool],
+        batch_info: Sequence[Any],
     ) -> None:
         """Observe a batch of action consequences.
 

@@ -581,6 +581,7 @@ class DQN(agent.AttributeSavingMixin, agent.BatchAgent):
         batch_reward: Sequence[float],
         batch_done: Sequence[bool],
         batch_reset: Sequence[bool],
+        _: Sequence[Any],
     ) -> None:
         if self.training:
             return self._batch_observe_train(

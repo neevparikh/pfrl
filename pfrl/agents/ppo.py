@@ -679,11 +679,11 @@ class PPO(agent.AttributeSavingMixin, agent.BatchAgent):
         else:
             return self._batch_act_eval(batch_obs)
 
-    def batch_observe(self, batch_obs, batch_reward, batch_done, batch_reset):
+    def batch_observe(self, batch_obs, batch_reward, batch_done, batch_reset, infos):
         if self.training:
-            self._batch_observe_train(batch_obs, batch_reward, batch_done, batch_reset)
+            self._batch_observe_train(batch_obs, batch_reward, batch_done, batch_reset, infos)
         else:
-            self._batch_observe_eval(batch_obs, batch_reward, batch_done, batch_reset)
+            self._batch_observe_eval(batch_obs, batch_reward, batch_done, batch_reset, infos)
 
     def _batch_act_eval(self, batch_obs):
         assert not self.training
@@ -742,7 +742,7 @@ class PPO(agent.AttributeSavingMixin, agent.BatchAgent):
 
         return batch_action
 
-    def _batch_observe_eval(self, batch_obs, batch_reward, batch_done, batch_reset):
+    def _batch_observe_eval(self, batch_obs, batch_reward, batch_done, batch_reset, _):
         assert not self.training
         if self.recurrent:
             # Reset recurrent states when episodes end
@@ -756,7 +756,7 @@ class PPO(agent.AttributeSavingMixin, agent.BatchAgent):
                     self.test_recurrent_states, indices_that_ended
                 )
 
-    def _batch_observe_train(self, batch_obs, batch_reward, batch_done, batch_reset):
+    def _batch_observe_train(self, batch_obs, batch_reward, batch_done, batch_reset, _):
         assert self.training
 
         for i, (state, action, reward, next_state, done, reset) in enumerate(

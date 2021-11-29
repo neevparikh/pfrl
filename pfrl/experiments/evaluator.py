@@ -199,7 +199,7 @@ def _batch_run_episodes(
             resets.fill(True)
 
         # Agent observes the consequences.
-        agent.batch_observe(obss, rs, dones, resets)
+        agent.batch_observe(obss, rs, dones, resets, infos)
 
         if termination_conditions:
             break

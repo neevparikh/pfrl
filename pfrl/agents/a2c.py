@@ -219,7 +219,7 @@ class A2C(agent.AttributeSavingMixin, agent.BatchAgent):
         else:
             return self._batch_act_eval(batch_obs)
 
-    def batch_observe(self, batch_obs, batch_reward, batch_done, batch_reset):
+    def batch_observe(self, batch_obs, batch_reward, batch_done, batch_reset, _):
         if self.training:
             self._batch_observe_train(batch_obs, batch_reward, batch_done, batch_reset)
 
